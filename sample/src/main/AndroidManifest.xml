@@ -21,8 +21,8 @@
     <application
         android:allowBackup="true"
         android:fullBackupContent="true"
-        android:label="AndroidLibraryTemplate Sample"
-        android:theme="@android:style/Theme.DeviceDefault">
+        android:label="ComposeSelectionTracker Sample"
+        android:theme="@android:style/Theme.Material.Light.NoActionBar">
 
         <activity
             android:name=".MainActivity"

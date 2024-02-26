@@ -4,6 +4,8 @@
 
 Selection library for the Jetpack Compose LazyList and LazyGrid.
 
+## Preview
+
 ## Integration
 
 Gradle:

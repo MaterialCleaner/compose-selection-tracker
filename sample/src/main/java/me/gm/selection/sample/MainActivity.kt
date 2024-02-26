@@ -14,15 +14,21 @@
  * limitations under the License.
  */
 
-package me.gm.selection.sample;
+package me.gm.selection.sample
 
-import android.app.Activity;
-import android.os.Bundle;
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 
-public class MainActivity extends Activity {
+class MainActivity : ComponentActivity() {
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
+        super.onCreate(savedInstanceState)
+
+        setContent {
+            SampleApp()
+        }
     }
 }
