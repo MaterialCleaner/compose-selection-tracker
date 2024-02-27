@@ -34,7 +34,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -61,6 +60,9 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
+import me.gm.selection.grid.dragAfterLongPressToSelectGesture
+import me.gm.selection.grid.selectableItems
+import me.gm.selection.grid.tapInActionModeToToggleGesture
 import me.gm.selection.list.dragAfterLongPressToSelectGesture
 import me.gm.selection.list.selectableItems
 import me.gm.selection.list.tapInActionModeToToggleGesture
@@ -161,26 +163,25 @@ fun SampleScreen() {
                         modifier = Modifier
                             .fillMaxSize()
                             .weight(1f)
-//                            .tapInActionModeToToggleGesture(gridState, selectionState, mapA)
-//                            .dragAfterLongPressToSelectGesture(gridState, selectionState, mapA)
-                        ,
+                            .tapInActionModeToToggleGesture(gridState, selectionState, mapA)
+                            .dragAfterLongPressToSelectGesture(gridState, selectionState, mapA),
                         state = gridState
                     ) {
-                        items(
-                            items = itemsA,
+                        selectableItems(
+                            state = selectionState,
+                            map = mapA,
                             span = { GridItemSpan(2) },
-                            key = { item -> item }
-                        ) { item ->
+                        ) { helper, item ->
                             ListItem(
                                 headlineContent = { Text(text = "Item $item") },
                                 modifier = Modifier.animateItemPlacement(),
-//                                colors = ListItemDefaults.colors(
-//                                    containerColor = if (helper.isThisSelected()) {
-//                                        MaterialTheme.colorScheme.primaryContainer
-//                                    } else {
-//                                        Color.Transparent
-//                                    }
-//                                ),
+                                colors = ListItemDefaults.colors(
+                                    containerColor = if (helper.isThisSelected()) {
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    } else {
+                                        Color.Transparent
+                                    }
+                                ),
                             )
                         }
                     }
