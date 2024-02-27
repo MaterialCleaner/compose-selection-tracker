@@ -60,7 +60,23 @@ fun <V> rememberKeyItemMap(
     }
 
     return remember(items, key) {
-        KeyItemMap(items, key)
+        KeyItemMap(items) { index -> key(items[index]) }
+    }
+}
+
+@Composable
+fun <V> rememberKeyItemMap(
+    state: KeySelectionState<V>? = null,
+    items: List<V>,
+    key: (index: Int, item: V) -> Any,
+): KeyItemMap<V> {
+    if (state != null) {
+        // Deselect removed items.
+        AutoDeselectEffect(state, items, key)
+    }
+
+    return remember(items, key) {
+        KeyItemMap(items) { index -> key(index, items[index]) }
     }
 }
 
@@ -68,18 +84,18 @@ fun <V> rememberKeyItemMap(
  * @see [androidx.compose.foundation.lazy.layout.NearestRangeKeyIndexMap]
  */
 open class KeyItemMap<V>(
-    internal val items: List<V>,
-    internal val key: (item: V) -> Any,
+    val items: List<V>,
+    val key: ((index: Int) -> Any),
 ) : KeyIndexItemMap<Any, V> {
     private val map: MutableScatterMap<Any, V> = MutableScatterMap()
 
-    override fun getItem(e: Any): V? = map.getOrElse(key) {
+    override fun getItem(e: Any): V? = map.getOrElse(e) {
         // TODO: It is possible to implement a heuristic function to make the search faster.
         for (i in map.size until items.size) {
+            val keyForItem = key(i)
             val item = items[i]
-            val keyForItem = key(item)
             map.put(keyForItem, item)
-            if (key == keyForItem) {
+            if (e == keyForItem) {
                 return item
             }
         }
@@ -87,7 +103,7 @@ open class KeyItemMap<V>(
     }
 
     override fun getFullItemMappings(): Iterable<Pair<Any, V>> =
-        items.map { item -> key(item) to item }
+        items.mapIndexed { index, item -> key(index) to item }
 }
 
 @Composable
@@ -106,7 +122,7 @@ fun <V> rememberIndexItemMap(
 }
 
 open class IndexItemMap<V>(
-    internal val items: List<V>
+    val items: List<V>
 ) : KeyIndexItemMap<Int, V> {
 
     override fun getItem(e: Int): V? = items[e]

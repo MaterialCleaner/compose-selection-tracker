@@ -137,8 +137,7 @@ fun SampleScreen() {
                     ) {
                         selectableItems(
                             state = selectionState,
-                            items = itemsA,
-                            key = { item -> item }
+                            map = mapA
                         ) { helper, item ->
                             ListItem(
                                 headlineContent = { Text(text = "Item $item") },

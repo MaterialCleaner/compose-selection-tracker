@@ -29,10 +29,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-
-enum class ScrollMode {
-    FastBackward, ModerateBackward, Idle, ModerateForward, FastForward
-}
+import me.gm.selection.ScrollMode
 
 /**
  * Provides support for auto-scrolling a LazyGrid.

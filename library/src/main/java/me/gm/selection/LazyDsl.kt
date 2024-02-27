@@ -40,6 +40,34 @@ inline fun <T> LazyListScope.selectableItems(
     }
 }
 
+inline fun <T> LazyListScope.selectableItems(
+    state: SelectionState<Any, T>,
+    map: KeyItemMap<T>,
+    crossinline contentType: (item: T) -> Any? = { null },
+    crossinline itemContent: @Composable SelectableLazyItemScope.(helper: IntervalHelper<T>, item: T) -> Unit
+) {
+    val items = map.items
+    val itemProvider = { index: Int -> items[index] }
+    val keyProvider = map.key
+    items(
+        count = items.size,
+        key = keyProvider,
+        contentType = { index: Int -> contentType(items[index]) }
+    ) { index ->
+        val helper = IntervalHelper(state, index, itemProvider, keyProvider)
+        with(SelectableLazyItemScopeImpl(this, state, helper)) {
+            itemContent(helper, items[index])
+        }
+    }
+}
+
+inline fun <T> LazyListScope.selectableItems(
+    state: SelectionState<Any, T>,
+    map: IndexItemMap<T>,
+    crossinline contentType: (item: T) -> Any? = { null },
+    crossinline itemContent: @Composable SelectableLazyItemScope.(helper: IntervalHelper<T>, item: T) -> Unit
+) = selectableItems(state, map.items, null, contentType, itemContent)
+
 inline fun <T> LazyListScope.selectableItemsIndexed(
     state: SelectionState<Any, T>,
     items: List<T>,
@@ -60,6 +88,34 @@ inline fun <T> LazyListScope.selectableItemsIndexed(
         }
     }
 }
+
+inline fun <T> LazyListScope.selectableItemsIndexed(
+    state: SelectionState<Any, T>,
+    map: KeyItemMap<T>,
+    crossinline contentType: (index: Int, item: T) -> Any? = { _, _ -> null },
+    crossinline itemContent: @Composable SelectableLazyItemScope.(helper: IntervalHelper<T>, index: Int, item: T) -> Unit
+) {
+    val items = map.items
+    val itemProvider = { index: Int -> items[index] }
+    val keyProvider = map.key
+    items(
+        count = items.size,
+        key = keyProvider,
+        contentType = { index -> contentType(index, items[index]) }
+    ) { index ->
+        val helper = IntervalHelper(state, index, itemProvider, keyProvider)
+        with(SelectableLazyItemScopeImpl(this, state, helper)) {
+            itemContent(helper, index, items[index])
+        }
+    }
+}
+
+inline fun <T> LazyListScope.selectableItemsIndexed(
+    state: SelectionState<Any, T>,
+    map: IndexItemMap<T>,
+    crossinline contentType: (index: Int, item: T) -> Any? = { _, _ -> null },
+    crossinline itemContent: @Composable SelectableLazyItemScope.(helper: IntervalHelper<T>, index: Int, item: T) -> Unit
+) = selectableItemsIndexed(state, map.items, null, contentType, itemContent)
 
 inline fun <T> LazyListScope.selectableItems(
     state: SelectionState<Any, T>,

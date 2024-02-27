@@ -29,31 +29,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import me.gm.selection.grid.ScrollMode
-
-/*
- * For an unreversed LazyColumn:
- * ==============================
- *          FastBackward
- * ==============================
- *        ModerateBackward
- * ==============================
- *
- *
- *
- *              Idle
- *
- *
- *
- * ==============================
- *        ModerateForward
- * ==============================
- *          FastForward
- * ==============================
- */
-enum class ScrollMode {
-    FastBackward, ModerateBackward, Idle, ModerateForward, FastForward
-}
+import me.gm.selection.ScrollMode
 
 /**
  * Provides support for auto-scrolling a LazyList.
