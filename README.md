@@ -16,6 +16,12 @@ once? This is the most important reason I created this library: to modularize se
 
 ## Features
 
+- Modularization: As mentioned in Background, this library has already implemented the selection logic you need, so you don't need to create a lot of repetitive selection code in ViewModels, not even once.
+- Click Event Decoupling: We have changed the click events under ActionMode to toggle() using name shadowing and pointerInput interception. This means you no longer need to manually manage the selection state in your click events.
+- Easy to integrate: Offers preset common multi-select gestures. You simply need to add a modifier to your LazyList or LazyGrid to easily implement common multi-select gestures.
+- Clean and Stable Implementation: Does not rely on any internal APIs or experimental APIs of LazyList and LazyGrid, so you don't have to worry about API changes or incompatibilities due to updates of Compose.
+- Highly Extensible: Provides multi-level interfaces and supports various complex use cases.
+
 ## Integration
 
 Gradle:
