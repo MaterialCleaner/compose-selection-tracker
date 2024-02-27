@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
-package me.gm.selection
+package me.gm.selection.list
 
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
+import me.gm.selection.IndexItemMap
+import me.gm.selection.IntervalHelper
+import me.gm.selection.KeyItemMap
+import me.gm.selection.SelectionState
 
 inline fun <T> LazyListScope.selectableItems(
     state: SelectionState<Any, T>,

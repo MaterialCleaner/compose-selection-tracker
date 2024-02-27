@@ -62,10 +62,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import me.gm.selection.list.dragAfterLongPressToSelectGesture
+import me.gm.selection.list.selectableItems
 import me.gm.selection.list.tapInActionModeToToggleGesture
 import me.gm.selection.rememberKeyItemMap
 import me.gm.selection.rememberKeySelectionState
-import me.gm.selection.selectableItems
 
 @OptIn(
     ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,

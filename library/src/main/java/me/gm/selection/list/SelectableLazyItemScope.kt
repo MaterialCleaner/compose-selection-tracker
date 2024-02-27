@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package me.gm.selection
+package me.gm.selection.list
 
 import android.annotation.SuppressLint
 import androidx.annotation.FloatRange
@@ -30,6 +30,8 @@ import androidx.compose.ui.composed
 import androidx.compose.ui.platform.debugInspectorInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.IntOffset
+import me.gm.selection.IntervalHelper
+import me.gm.selection.SelectionState
 import androidx.compose.foundation.clickable as foundationClickable
 
 interface SelectableLazyItemScope : LazyItemScope {
