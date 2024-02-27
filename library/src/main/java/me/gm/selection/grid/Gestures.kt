@@ -17,12 +17,12 @@
 // Should NOT add "this then "! This lint is not true!
 @file:SuppressLint("ModifierFactoryUnreferencedReceiver")
 
-package me.gm.selection
+package me.gm.selection.grid
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.lazy.LazyListItemInfo
-import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.grid.LazyGridItemInfo
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
@@ -31,80 +31,53 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import me.gm.selection.DetailsLookup
+import me.gm.selection.IndexItemMap
+import me.gm.selection.IndexSelectionState
+import me.gm.selection.KeyIndexItemMap
+import me.gm.selection.KeyItemMap
+import me.gm.selection.KeySelectionState
+import me.gm.selection.RangeHelper
+import me.gm.selection.SelectionState
+import me.gm.selection.detectDragGesturesAfterLongPress
+import me.gm.selection.detectTapGestures
 
-abstract class DetailsLookup<T> {
+abstract class LazyGridDetailsLookup<V> : DetailsLookup<LazyGridItemInfo, V>
 
-    /**
-     * The Selection library calls this function when it needs the item
-     * that meets specific criteria.
-     */
-    abstract fun getItem(itemInfo: LazyListItemInfo): T?
+private class FullyInteractiveLazyGridDetailsLookup<V>(
+    private val map: KeyIndexItemMap<Any, V>,
+    private val key: (itemInfo: LazyGridItemInfo) -> Any = when (map) {
+        is KeyItemMap -> { itemInfo -> itemInfo.key }
+        is IndexItemMap -> { itemInfo -> itemInfo.index }
+    }
+) : LazyGridDetailsLookup<V>() {
 
-    fun inPressRegion(itemInfo: LazyListItemInfo, position: Offset): Boolean = true
-
-    /**
-     * "Item Drag Region" identifies areas of an item that are not considered when the library
-     * evaluates whether or not to initiate band-selection for mouse input. The drag region
-     * will usually correspond to an area of an item that represents user visible content.
-     * Mouse driven band selection operations are only ever initiated in non-drag-regions.
-     * This is a consideration as many layouts may not include empty space between
-     * RecyclerView items where band selection can be initiated.
-     *
-     *
-     *
-     * For example. You may present a single column list of contact names in a
-     * RecyclerView instance in which the individual view items expand to fill all
-     * available space.
-     * But within the expanded view item after the contact name there may be empty space that a
-     * user would reasonably expect to initiate band selection. When a MotionEvent occurs
-     * in such an area, you should return identify this as NOT in a drag region.
-     *
-     *
-     *
-     * Further more, within a drag region, a mouse click and drag will immediately
-     * initiate drag and drop (if supported by your configuration).
-     *
-     * @return true if the item is in an area of the item that can result in dragging
-     * the item. List items frequently have a white area that is not draggable allowing
-     * mouse driven band selection to be initiated in that area.
-     */
-    fun inDragRegion(itemInfo: LazyListItemInfo, position: Offset): Boolean = true
+    override fun getItem(itemInfo: LazyGridItemInfo): V? = map.getItem(key(itemInfo))
 }
 
 private fun touchInfo(
-    listState: LazyListState,
-    offset: Offset,
-): Pair<LazyListItemInfo, Offset>? {
-    val touchedItem = listState.layoutInfo.visibleItemsInfo.find { itemInfo ->
-        if (listState.layoutInfo.orientation == Orientation.Vertical) {
-            (offset.y + listState.layoutInfo.viewportStartOffset).toInt() in
-                    itemInfo.offset until (itemInfo.offset + itemInfo.size)
-        } else {
-            (offset.x + listState.layoutInfo.viewportStartOffset).toInt() in
-                    itemInfo.offset until (itemInfo.offset + itemInfo.size)
-        }
+    gridState: LazyGridState,
+    touchPosition: Offset,
+): Pair<LazyGridItemInfo, Offset>? {
+    val offset = if (gridState.layoutInfo.orientation == Orientation.Vertical) {
+        Offset(touchPosition.x, gridState.layoutInfo.viewportStartOffset + touchPosition.y)
+    } else {
+        Offset(gridState.layoutInfo.viewportStartOffset + touchPosition.x, touchPosition.y)
+    }
+    val touchedItem = gridState.layoutInfo.visibleItemsInfo.find { itemInfo ->
+        offset.x.toInt() in itemInfo.offset.x until (itemInfo.offset.x + itemInfo.size.width) &&
+                offset.y.toInt() in itemInfo.offset.y until (itemInfo.offset.y + itemInfo.size.height)
     } ?: return null
-    val touchOffset =
-        if (listState.layoutInfo.orientation == Orientation.Vertical) {
-            Offset(
-                offset.x,
-                offset.y + listState.layoutInfo.viewportStartOffset - touchedItem.offset
-            )
-        } else {
-            Offset(
-                offset.x + listState.layoutInfo.viewportStartOffset - touchedItem.offset,
-                offset.y
-            )
-        }
-    return touchedItem to touchOffset
+    val itemOffset = Offset(offset.x - touchedItem.offset.x, offset.y - touchedItem.offset.y)
+    return touchedItem to itemOffset
 }
 
-private fun <T> itemDetails(
-    listState: LazyListState,
-    offset: Offset,
-    detailsLookup: DetailsLookup<T>,
-): Pair<LazyListItemInfo, T>? {
-    val (touchedItem, touchOffset) = touchInfo(listState, offset)
+private fun <V> itemDetails(
+    gridState: LazyGridState,
+    touchPosition: Offset,
+    detailsLookup: LazyGridDetailsLookup<V>,
+): Pair<LazyGridItemInfo, V>? {
+    val (touchedItem, touchOffset) = touchInfo(gridState, touchPosition)
         ?: return null
     if (detailsLookup.inPressRegion(touchedItem, touchOffset)) {
         val item = detailsLookup.getItem(touchedItem) ?: return null
@@ -113,38 +86,48 @@ private fun <T> itemDetails(
     return null
 }
 
-private fun <K> SelectionState<K, *>.key(touchedItem: LazyListItemInfo): K =
+private fun <K> SelectionState<K, *>.key(touchedItem: LazyGridItemInfo): K =
     when (this) {
         is KeySelectionState -> touchedItem.key
         is IndexSelectionState -> touchedItem.index
         else -> throw IllegalArgumentException()
     } as K
 
-fun <T> Modifier.longPressToToggleGesture(
-    listState: LazyListState,
-    selectionState: SelectionState<Any, T>,
-    detailsLookup: DetailsLookup<T>,
+fun <V> Modifier.longPressToToggleGesture(
+    gridState: LazyGridState,
+    selectionState: SelectionState<Any, V>,
+    detailsLookup: LazyGridDetailsLookup<V>,
 ): Modifier = pointerInput(Unit) {
     detectTapGestures(
         onLongPress = { offset ->
-            val (touchedItem, item) = itemDetails(listState, offset, detailsLookup)
+            val (touchedItem, item) = itemDetails(gridState, offset, detailsLookup)
                 ?: return@detectTapGestures false
             selectionState.toggle(selectionState.key(touchedItem), item)
         }
     )
 }
 
-fun <T> Modifier.tapInActionModeToToggleGesture(
-    listState: LazyListState,
-    selectionState: SelectionState<Any, T>,
-    detailsLookup: DetailsLookup<T>,
+fun <V> Modifier.longPressToToggleGesture(
+    gridState: LazyGridState,
+    selectionState: SelectionState<Any, V>,
+    map: KeyIndexItemMap<Any, V>,
+): Modifier = longPressToToggleGesture(
+    gridState,
+    selectionState,
+    FullyInteractiveLazyGridDetailsLookup(map)
+)
+
+fun <V> Modifier.tapInActionModeToToggleGesture(
+    gridState: LazyGridState,
+    selectionState: SelectionState<Any, V>,
+    detailsLookup: LazyGridDetailsLookup<V>,
 ): Modifier = pointerInput(selectionState.hasSelection()) {
     if (!selectionState.hasSelection()) {
         return@pointerInput
     }
     detectTapGestures(
         onTap = { offset ->
-            val (touchedItem, item) = itemDetails(listState, offset, detailsLookup)
+            val (touchedItem, item) = itemDetails(gridState, offset, detailsLookup)
                 ?: return@detectTapGestures false
             selectionState.toggle(selectionState.key(touchedItem), item)
             return@detectTapGestures true
@@ -152,13 +135,23 @@ fun <T> Modifier.tapInActionModeToToggleGesture(
     )
 }
 
-private class RangeSupport<T>(
-    private val listState: LazyListState,
-    private val detailsLookup: DetailsLookup<T>,
-    private val selectionState: SelectionState<Any, T>,
+fun <V> Modifier.tapInActionModeToToggleGesture(
+    gridState: LazyGridState,
+    selectionState: SelectionState<Any, V>,
+    map: KeyIndexItemMap<Any, V>,
+): Modifier = tapInActionModeToToggleGesture(
+    gridState,
+    selectionState,
+    FullyInteractiveLazyGridDetailsLookup(map)
+)
+
+private class RangeSupport<V>(
+    private val gridState: LazyGridState,
+    private val detailsLookup: LazyGridDetailsLookup<V>,
+    private val selectionState: SelectionState<Any, V>,
     private val anchor: Int,
     initialPosition: Offset,
-    val scroller: AutoScroller = AutoScroller(listState, initialPosition),
+    val scroller: AutoScroller = AutoScroller(gridState, initialPosition),
 ) {
     private val initialSelection: Set<Any?> = selectionState.selectedKeys().toSet()
     private var extend: Int by mutableIntStateOf(anchor)
@@ -167,12 +160,12 @@ private class RangeSupport<T>(
         return RangeHelper.buildRange(anchor, extend)
     }
 
-    private fun lookupItemInfoForIndex(index: Int): LazyListItemInfo? {
-        val itemInfoIndex = listState.layoutInfo.visibleItemsInfo.binarySearchBy(index) { it.index }
-        return if (itemInfoIndex >= 0) listState.layoutInfo.visibleItemsInfo[itemInfoIndex] else null
+    private fun lookupItemInfoForIndex(index: Int): LazyGridItemInfo? {
+        val itemInfoIndex = gridState.layoutInfo.visibleItemsInfo.binarySearchBy(index) { it.index }
+        return if (itemInfoIndex >= 0) gridState.layoutInfo.visibleItemsInfo[itemInfoIndex] else null
     }
 
-    fun extendRange(extendToItem: LazyListItemInfo) {
+    fun extendRange(extendToItem: LazyGridItemInfo) {
         val oldRange = range()
         extend = extendToItem.index
         val newRange = range()
@@ -201,21 +194,21 @@ private class RangeSupport<T>(
 /**
  * Note that this cannot be used together with [longPressToToggleGesture].
  */
-fun <T> Modifier.dragAfterLongPressToSelectGesture(
-    listState: LazyListState,
-    selectionState: SelectionState<Any, T>,
-    detailsLookup: DetailsLookup<T>,
+fun <V> Modifier.dragAfterLongPressToSelectGesture(
+    gridState: LazyGridState,
+    selectionState: SelectionState<Any, V>,
+    detailsLookup: LazyGridDetailsLookup<V>,
 ): Modifier = pointerInput(Unit) {
     coroutineScope {
-        var rangeSupport: RangeSupport<T>? = null
+        var rangeSupport: RangeSupport<V>? = null
         detectDragGesturesAfterLongPress(
             onDragStart = onDragStart@{ offset ->
-                val (touchedItem, item) = itemDetails(listState, offset, detailsLookup)
+                val (touchedItem, item) = itemDetails(gridState, offset, detailsLookup)
                     ?: return@onDragStart
                 val selected = selectionState.toggle(selectionState.key(touchedItem), item)
                 if (selected) {
                     rangeSupport = RangeSupport(
-                        listState, detailsLookup, selectionState, touchedItem.index, offset
+                        gridState, detailsLookup, selectionState, touchedItem.index, offset
                     )
                 }
             },
@@ -232,7 +225,7 @@ fun <T> Modifier.dragAfterLongPressToSelectGesture(
             val rangeSupport = rangeSupport
             rangeSupport ?: return@detectDragGesturesAfterLongPress
             val onPositionChange = onPositionChange@{
-                val (touchedItem, touchOffset) = touchInfo(listState, change.position)
+                val (touchedItem, touchOffset) = touchInfo(gridState, change.position)
                     ?: return@onPositionChange
                 if (detailsLookup.inDragRegion(touchedItem, touchOffset)) {
                     rangeSupport.extendRange(touchedItem)
@@ -245,3 +238,13 @@ fun <T> Modifier.dragAfterLongPressToSelectGesture(
         }
     }
 }
+
+fun <V> Modifier.dragAfterLongPressToSelectGesture(
+    gridState: LazyGridState,
+    selectionState: SelectionState<Any, V>,
+    map: KeyIndexItemMap<Any, V>,
+): Modifier = dragAfterLongPressToSelectGesture(
+    gridState,
+    selectionState,
+    FullyInteractiveLazyGridDetailsLookup(map)
+)

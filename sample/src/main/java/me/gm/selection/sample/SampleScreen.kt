@@ -61,11 +61,11 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
-import me.gm.selection.dragAfterLongPressToSelectGesture
+import me.gm.selection.list.dragAfterLongPressToSelectGesture
+import me.gm.selection.list.tapInActionModeToToggleGesture
 import me.gm.selection.rememberKeyItemMap
 import me.gm.selection.rememberKeySelectionState
 import me.gm.selection.selectableItems
-import me.gm.selection.tapInActionModeToToggleGesture
 
 @OptIn(
     ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
@@ -112,16 +112,20 @@ fun SampleScreen() {
         },
         contentWindowInsets = windowInsets
     ) { contentPadding ->
-        var selectedOption by rememberSaveable { mutableStateOf("LazyList") }
+        var selectedOption by rememberSaveable { mutableStateOf("LazyColumn") }
 
         val mapA = rememberKeyItemMap(
             items = itemsA,
-            key = { item -> item },
+            key = { item -> "A" to item },
             state = selectionState
         )
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(contentPadding)
+        ) {
             when (selectedOption) {
-                "LazyList" -> {
+                "LazyColumn" -> {
                     val listState = rememberLazyListState()
                     LazyColumn(
                         modifier = Modifier
@@ -129,8 +133,7 @@ fun SampleScreen() {
                             .weight(1f)
                             .tapInActionModeToToggleGesture(listState, selectionState, mapA)
                             .dragAfterLongPressToSelectGesture(listState, selectionState, mapA),
-                        state = listState,
-                        contentPadding = contentPadding
+                        state = listState
                     ) {
                         selectableItems(
                             state = selectionState,
@@ -152,7 +155,7 @@ fun SampleScreen() {
                     }
                 }
 
-                "LazyGrid" -> {
+                "LazyVerticalGrid" -> {
                     val gridState = rememberLazyGridState()
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(4),
@@ -162,8 +165,7 @@ fun SampleScreen() {
 //                            .tapInActionModeToToggleGesture(gridState, selectionState, mapA)
 //                            .dragAfterLongPressToSelectGesture(gridState, selectionState, mapA)
                         ,
-                        state = gridState,
-                        contentPadding = contentPadding
+                        state = gridState
                     ) {
                         items(
                             items = itemsA,
@@ -185,8 +187,10 @@ fun SampleScreen() {
                     }
                 }
             }
-            FlowRow(modifier = Modifier.padding(16.dp)) {
-                arrayOf("LazyList", "LazyGrid").forEach {
+            FlowRow(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                arrayOf("LazyColumn", "LazyRow", "LazyVerticalGrid", "LazyHorizontalGrid").forEach {
                     Row(
                         modifier = Modifier.clickable { selectedOption = it },
                         verticalAlignment = Alignment.CenterVertically
@@ -198,6 +202,10 @@ fun SampleScreen() {
                         Text(text = it)
                     }
                 }
+            }
+            FlowRow(
+                modifier = Modifier.padding(16.dp)
+            ) {
                 TextButton(onClick = { /*TODO*/ }) {
                     Text(text = "Shuffle")
                 }

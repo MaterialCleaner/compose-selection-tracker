@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package me.gm.selection
+package me.gm.selection.grid
 
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.animateScrollBy
-import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -30,37 +30,17 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
-/*
- * For an unreversed LazyColumn:
- * ==============================
- *          FastBackward
- * ==============================
- *        ModerateBackward
- * ==============================
- *
- *
- *
- *              Idle
- *
- *
- *
- * ==============================
- *        ModerateForward
- * ==============================
- *          FastForward
- * ==============================
- */
 enum class ScrollMode {
     FastBackward, ModerateBackward, Idle, ModerateForward, FastForward
 }
 
 /**
- * Provides support for auto-scrolling a LazyList.
+ * Provides support for auto-scrolling a LazyGrid.
  *
  * @hide
  */
 class AutoScroller(
-    private val listState: LazyListState,
+    private val listState: LazyGridState,
     initialPosition: Offset,
     private val scrollThresholdRatio: Float = 0.2F,
     private val fastScrollThresholdRatio: Float = scrollThresholdRatio / 2,
@@ -70,8 +50,8 @@ class AutoScroller(
     /**
      * Setting the initial [ScrollMode] is to ensure that scrolling is never triggered within the
      * initially pressed area. This can prevent triggering [ScrollMode.FastBackward] when dragging
-     * from the starting side of the [androidx.compose.foundation.lazy.LazyList] to the other side,
-     * and vice versa.
+     * from the starting side of the [androidx.compose.foundation.lazy.grid.LazyGrid] to
+     * the other side, and vice versa.
      */
     private var scrollMode: ScrollMode by mutableStateOf(scrollModeForPosition(initialPosition))
 

@@ -6,6 +6,16 @@ Selection library for the Jetpack Compose LazyList and LazyGrid.
 
 ## Preview
 
+## Background
+
+Selection is easy to implement. However, is it easy to stay elegant? I've seen some developers
+manage selection logic within the ViewModel. If there's only one place in the entire project that
+requires selection, this approach seems fine. However, if multiple areas require it, the selection
+logic will be duplicated across multiple ViewModels. Why not have these selection logics appear just
+once? This is the most important reason I created this library: to modularize selection for reuse.
+
+## Features
+
 ## Integration
 
 Gradle:

@@ -17,7 +17,6 @@
 package me.gm.selection
 
 import androidx.collection.MutableScatterMap
-import androidx.compose.foundation.lazy.LazyListItemInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -25,66 +24,56 @@ import androidx.compose.runtime.remember
 /**
  * @see [androidx.compose.foundation.lazy.layout.LazyLayoutKeyIndexMap]
  */
-interface KeyIndexItemMap<T> {
+sealed interface KeyIndexItemMap<K, V> {
 
-    fun getItemForKey(key: Any): T?
+    fun getItem(e: K): V?
 
-    fun getItemForIndex(index: Int): T?
-
-    fun getFullKeyItemMappings(): Iterable<Pair<Any, T>>
-
-    fun getFullIndexItemMappings(): Iterable<Pair<Int, T>>
-}
-
-/**
- * @see [androidx.compose.foundation.lazy.rememberLazyListItemProviderLambda]
- */
-@Composable
-fun <T> rememberKeyItemMap(
-    items: List<T>,
-    key: (item: T) -> Any,
-    state: KeySelectionState<T>? = null,
-): DefaultKeyItemMap<T> {
-    if (state != null) {
-        // Deselect removed items.
-        AutoDeselectEffect(items, key, state)
-    }
-
-    return remember(items, key) {
-        DefaultKeyItemMap(items, key)
-    }
+    fun getFullItemMappings(): Iterable<Pair<K, V>>
 }
 
 /**
  * Automatically deselect removed keys when items change.
  */
 @Composable
-fun <T> AutoDeselectEffect(
-    items: List<T>,
-    key: (item: T) -> Any,
-    state: KeySelectionState<T>,
+private fun <V> AutoDeselectEffect(
+    state: KeySelectionState<V>,
+    items: List<V>,
+    key: (index: Int, item: V) -> Any,
 ) = LaunchedEffect(items) {
     val currentSelectedKeys = state.selectedKeys()
-    val newKeys = items.map(key).toSet()
+    val newKeys = items.mapIndexed(key).toSet()
     currentSelectedKeys.filterNot { it in newKeys }.forEach { key -> state.deselect(key) }
 }
 
+/**
+ * @see [androidx.compose.foundation.lazy.rememberLazyListItemProviderLambda]
+ */
 @Composable
-fun <T> AutoDeselectEffect(
-    map: DefaultKeyItemMap<T>,
-    state: KeySelectionState<T>,
-) = AutoDeselectEffect(map.items, map.key, state)
+fun <V> rememberKeyItemMap(
+    state: KeySelectionState<V>? = null,
+    items: List<V>,
+    key: (item: V) -> Any,
+): KeyItemMap<V> {
+    if (state != null) {
+        // Deselect removed items.
+        AutoDeselectEffect(state, items) { index, item -> key(item) }
+    }
+
+    return remember(items, key) {
+        KeyItemMap(items, key)
+    }
+}
 
 /**
  * @see [androidx.compose.foundation.lazy.layout.NearestRangeKeyIndexMap]
  */
-class DefaultKeyItemMap<T>(
-    internal val items: List<T>,
-    internal val key: (item: T) -> Any,
-) : DetailsLookup<T>(), KeyIndexItemMap<T> {
-    private val map: MutableScatterMap<Any, T> = MutableScatterMap()
+open class KeyItemMap<V>(
+    internal val items: List<V>,
+    internal val key: (item: V) -> Any,
+) : KeyIndexItemMap<Any, V> {
+    private val map: MutableScatterMap<Any, V> = MutableScatterMap()
 
-    override fun getItemForKey(key: Any): T? = map.getOrElse(key) {
+    override fun getItem(e: Any): V? = map.getOrElse(key) {
         // TODO: It is possible to implement a heuristic function to make the search faster.
         for (i in map.size until items.size) {
             val item = items[i]
@@ -97,20 +86,35 @@ class DefaultKeyItemMap<T>(
         return null
     }
 
-    override fun getItemForIndex(index: Int): T? = throw UnsupportedOperationException()
-
-    override fun getFullKeyItemMappings(): Iterable<Pair<Any, T>> =
+    override fun getFullItemMappings(): Iterable<Pair<Any, V>> =
         items.map { item -> key(item) to item }
-
-    override fun getFullIndexItemMappings(): Iterable<Pair<Int, T>> =
-        throw UnsupportedOperationException()
-
-    override fun getItem(itemInfo: LazyListItemInfo): T? = getItemForKey(itemInfo.key)
 }
 
-public operator fun <T> Collection<T>.plus(element: T): List<T> {
-    val result = ArrayList<T>(size + 1)
-    result.addAll(this)
-    result.add(element)
-    return result
+@Composable
+fun <V> rememberIndexItemMap(
+    state: KeySelectionState<V>? = null,
+    items: List<V>,
+): IndexItemMap<V> {
+    if (state != null) {
+        // Deselect removed items.
+        AutoDeselectEffect(state, items) { index, item -> index }
+    }
+
+    return remember(items) {
+        IndexItemMap(items)
+    }
+}
+
+open class IndexItemMap<V>(
+    internal val items: List<V>
+) : KeyIndexItemMap<Int, V> {
+
+    override fun getItem(e: Int): V? = items[e]
+
+    override fun getFullItemMappings(): Iterable<Pair<Int, V>> =
+        items.mapIndexed { index, item -> index to item }
+}
+
+operator fun KeyIndexItemMap<*, *>.plus(other: KeyIndexItemMap<*, *>): KeyIndexItemMap<*, *> {
+    TODO()
 }

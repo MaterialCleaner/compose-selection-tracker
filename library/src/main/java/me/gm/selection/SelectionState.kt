@@ -70,7 +70,7 @@ fun <V> rememberIndexSelectionState(
     }
 }
 
-interface SelectionState<K, V> {
+sealed interface SelectionState<K, V> {
 
     fun select(e: K, item: V): Boolean
 
