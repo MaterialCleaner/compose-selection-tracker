@@ -20,6 +20,7 @@
 
     <application
         android:allowBackup="true"
+        android:enableOnBackInvokedCallback="true"
         android:fullBackupContent="true"
         android:label="ComposeSelectionTracker Sample"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">

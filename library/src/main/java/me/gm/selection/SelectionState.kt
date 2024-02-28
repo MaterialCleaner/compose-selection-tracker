@@ -56,7 +56,6 @@ fun <V> rememberKeySelectionState(
  * [noOpSaver] or [viewModelSaver] to keep the implementation simple. Alternatively, you can use
  * [autoSaver] or a custom [Saver] to ensure data is not lost
  * @param initialSelection the initial value for [SelectionSupport.selection]
- * @see [androidx.compose.foundation.lazy.layout.MutableIntervalList]
  */
 @Composable
 fun <V> rememberIndexSelectionState(

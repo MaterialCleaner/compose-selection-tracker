@@ -68,6 +68,7 @@ import me.gm.selection.grid.selectableItems
 import me.gm.selection.grid.tapInActionModeToToggleGesture
 import me.gm.selection.list.dragAfterLongPressToSelectGesture
 import me.gm.selection.list.selectableItems
+import me.gm.selection.plus
 import me.gm.selection.rememberKeyItemMap
 import me.gm.selection.rememberKeySelectionState
 
@@ -78,12 +79,12 @@ import me.gm.selection.rememberKeySelectionState
 @Composable
 fun SampleScreen() {
     val itemsA = remember {
-        List(10) { index ->
+        List(8) { index ->
             index
         }
     }
     val itemsB = remember {
-        List(10) { index ->
+        List(8) { index ->
             index
         }
     }
@@ -123,6 +124,11 @@ fun SampleScreen() {
             key = { item -> "A" to item },
             state = selectionState
         )
+        val mapB = rememberKeyItemMap(
+            items = itemsB,
+            key = { item -> "B" to item },
+            state = selectionState
+        )
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -135,7 +141,9 @@ fun SampleScreen() {
                         modifier = Modifier
                             .fillMaxSize()
                             .weight(1f)
-                            .dragAfterLongPressToSelectGesture(listState, selectionState, mapA),
+                            .dragAfterLongPressToSelectGesture(
+                                listState, selectionState, mapA + mapB
+                            ),
                         state = listState
                     ) {
                         selectableItems(
@@ -153,6 +161,23 @@ fun SampleScreen() {
                                     },
                                 helper = helper,
                                 text = "ItemA $item",
+                            )
+                        }
+                        selectableItems(
+                            state = selectionState,
+                            map = mapB
+                        ) { helper, item ->
+                            val context = LocalContext.current
+                            SampleListItem(
+                                modifier = Modifier
+                                    .animateItemPlacement()
+                                    .clickable {
+                                        Toast
+                                            .makeText(context, "ItemB $item", Toast.LENGTH_SHORT)
+                                            .show()
+                                    },
+                                helper = helper,
+                                text = "ItemB $item",
                             )
                         }
                     }

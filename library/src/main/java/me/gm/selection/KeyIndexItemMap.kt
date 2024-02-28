@@ -25,11 +25,18 @@ import androidx.compose.runtime.remember
  * @see [androidx.compose.foundation.lazy.layout.LazyLayoutKeyIndexMap]
  */
 sealed interface KeyIndexItemMap<K, V> {
+    val items: List<V>
 
     fun getItem(e: K): V?
 
     fun getFullItemMappings(): Iterable<Pair<K, V>>
 }
+
+interface KeyItemMap<V> : KeyIndexItemMap<Any, V> {
+    val key: (index: Int) -> Any
+}
+
+interface IndexItemMap<V> : KeyIndexItemMap<Int, V>
 
 /**
  * Automatically deselect removed keys when items change.
@@ -60,7 +67,7 @@ fun <V> rememberKeyItemMap(
     }
 
     return remember(items, key) {
-        KeyItemMap(items) { index -> key(items[index]) }
+        KeyItemMapImpl(items) { index -> key(items[index]) }
     }
 }
 
@@ -76,17 +83,17 @@ fun <V> rememberKeyItemMap(
     }
 
     return remember(items, key) {
-        KeyItemMap(items) { index -> key(index, items[index]) }
+        KeyItemMapImpl(items) { index -> key(index, items[index]) }
     }
 }
 
 /**
  * @see [androidx.compose.foundation.lazy.layout.NearestRangeKeyIndexMap]
  */
-open class KeyItemMap<V>(
-    val items: List<V>,
-    val key: ((index: Int) -> Any),
-) : KeyIndexItemMap<Any, V> {
+open class KeyItemMapImpl<V>(
+    override val items: List<V>,
+    override val key: (index: Int) -> Any,
+) : KeyItemMap<V> {
     private val map: MutableScatterMap<Any, V> = MutableScatterMap()
 
     override fun getItem(e: Any): V? = map.getOrElse(e) {
@@ -117,13 +124,13 @@ fun <V> rememberIndexItemMap(
     }
 
     return remember(items) {
-        IndexItemMap(items)
+        IndexItemMapImpl(items)
     }
 }
 
-open class IndexItemMap<V>(
-    val items: List<V>
-) : KeyIndexItemMap<Int, V> {
+open class IndexItemMapImpl<V>(
+    override val items: List<V>
+) : IndexItemMap<V> {
 
     override fun getItem(e: Int): V? = items[e]
 
@@ -131,6 +138,41 @@ open class IndexItemMap<V>(
         items.mapIndexed { index, item -> index to item }
 }
 
-operator fun KeyIndexItemMap<*, *>.plus(other: KeyIndexItemMap<*, *>): KeyIndexItemMap<*, *> {
-    TODO()
+/**
+ * This can only be used as a parameter for modifiers.
+ */
+private class CombinedKeyItemMap<V>(
+    val maps: MutableList<KeyItemMap<V>>,
+    override val items: List<V> = emptyList(),
+    override val key: (Int) -> Any = { throw UnsupportedOperationException() }
+) : KeyItemMap<V> {
+
+    override fun getItem(e: Any): V? {
+        for (map in maps) {
+            val item = map.getItem(e)
+            if (item != null) {
+                return item
+            }
+        }
+        return null
+    }
+
+    override fun getFullItemMappings(): Iterable<Pair<Int, V>> =
+        throw UnsupportedOperationException()
 }
+
+operator fun <V> KeyItemMap<V>.plus(other: KeyItemMap<V>): KeyItemMap<V> {
+    return if (this is CombinedKeyItemMap) {
+        this.maps.add(other)
+        this
+    } else {
+        CombinedKeyItemMap(mutableListOf(this, other))
+    }
+}
+
+/*
+ * Combining [IndexItemMap] requires knowing the position of each interval, which is similar to
+ * [androidx.compose.foundation.lazy.layout.MutableIntervalList].
+ * This introduces some implicit restrictions on usage, which we do not favor, and therefore,
+ * we do not provide a built-in implementation.
+ */
