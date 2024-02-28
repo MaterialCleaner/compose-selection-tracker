@@ -16,9 +16,11 @@
 
 package me.gm.selection.sample
 
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -60,12 +62,12 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
+import me.gm.selection.IntervalHelper
 import me.gm.selection.grid.dragAfterLongPressToSelectGesture
 import me.gm.selection.grid.selectableItems
 import me.gm.selection.grid.tapInActionModeToToggleGesture
 import me.gm.selection.list.dragAfterLongPressToSelectGesture
 import me.gm.selection.list.selectableItems
-import me.gm.selection.list.tapInActionModeToToggleGesture
 import me.gm.selection.rememberKeyItemMap
 import me.gm.selection.rememberKeySelectionState
 
@@ -133,7 +135,6 @@ fun SampleScreen() {
                         modifier = Modifier
                             .fillMaxSize()
                             .weight(1f)
-                            .tapInActionModeToToggleGesture(listState, selectionState, mapA)
                             .dragAfterLongPressToSelectGesture(listState, selectionState, mapA),
                         state = listState
                     ) {
@@ -141,16 +142,17 @@ fun SampleScreen() {
                             state = selectionState,
                             map = mapA
                         ) { helper, item ->
-                            ListItem(
-                                headlineContent = { Text(text = "Item $item") },
-                                modifier = Modifier.animateItemPlacement(),
-                                colors = ListItemDefaults.colors(
-                                    containerColor = if (helper.isThisSelected()) {
-                                        MaterialTheme.colorScheme.primaryContainer
-                                    } else {
-                                        Color.Transparent
-                                    }
-                                ),
+                            val context = LocalContext.current
+                            SampleListItem(
+                                modifier = Modifier
+                                    .animateItemPlacement()
+                                    .clickable {
+                                        Toast
+                                            .makeText(context, "ItemA $item", Toast.LENGTH_SHORT)
+                                            .show()
+                                    },
+                                helper = helper,
+                                text = "ItemA $item",
                             )
                         }
                     }
@@ -172,23 +174,19 @@ fun SampleScreen() {
                             map = mapA,
                             span = { GridItemSpan(2) },
                         ) { helper, item ->
-                            ListItem(
-                                headlineContent = { Text(text = "Item $item") },
+                            SampleListItem(
                                 modifier = Modifier.animateItemPlacement(),
-                                colors = ListItemDefaults.colors(
-                                    containerColor = if (helper.isThisSelected()) {
-                                        MaterialTheme.colorScheme.primaryContainer
-                                    } else {
-                                        Color.Transparent
-                                    }
-                                ),
+                                helper = helper,
+                                text = "ItemA $item",
                             )
                         }
                     }
                 }
             }
             FlowRow(
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 arrayOf("LazyColumn", "LazyRow", "LazyVerticalGrid", "LazyHorizontalGrid").forEach {
                     Row(
@@ -204,7 +202,9 @@ fun SampleScreen() {
                 }
             }
             FlowRow(
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 TextButton(onClick = { /*TODO*/ }) {
                     Text(text = "Shuffle")
@@ -215,4 +215,23 @@ fun SampleScreen() {
             }
         }
     }
+}
+
+@Composable
+private fun SampleListItem(
+    modifier: Modifier,
+    helper: IntervalHelper<*>,
+    text: String
+) {
+    ListItem(
+        headlineContent = { Text(text = text) },
+        modifier = modifier,
+        colors = ListItemDefaults.colors(
+            containerColor = if (helper.isThisSelected()) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                Color.Transparent
+            }
+        ),
+    )
 }
