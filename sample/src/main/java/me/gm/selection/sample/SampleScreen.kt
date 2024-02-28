@@ -130,12 +130,10 @@ fun SampleScreen() {
         var selectedOption by rememberSaveable { mutableStateOf("LazyColumn") }
 
         val mapA = rememberKeyItemMap(
-            state = selectionState,
             items = itemsA,
             key = { item -> "A" to item },
         )
         val mapB = rememberKeyItemMap(
-            state = selectionState,
             items = itemsB,
             key = { item -> "B" to item },
         )

@@ -16,6 +16,7 @@
 
 package me.gm.selection
 
+import android.util.Log
 import androidx.collection.MutableScatterMap
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -50,6 +51,10 @@ private fun <V> AutoDeselectEffect(
     val currentSelectedKeys = state.selectedKeys()
     val newKeys = items.mapIndexed(key).toSet()
     currentSelectedKeys.filterNot { it in newKeys }.forEach { key -> state.deselect(key) }
+    val deselectedItemCount = currentSelectedKeys.size - state.selectedKeys().size
+    if (deselectedItemCount > 0) {
+        Log.d("AutoDeselectEffect", "Automatically deselect $deselectedItemCount items.")
+    }
 }
 
 /**
