@@ -40,6 +40,7 @@ import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -57,12 +58,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.autoSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import me.gm.selection.IntervalHelper
 import me.gm.selection.KeyIndexItemMap
@@ -88,12 +91,12 @@ fun SampleScreen() {
     val itemsA = remember {
         List(8) { index ->
             index
-        }
+        }.toMutableStateList()
     }
     val itemsB = remember {
         List(8) { index ->
             index
-        }
+        }.toMutableStateList()
     }
     val selectionState = rememberKeySelectionState<Int>(autoSaver())
     BackHandler(enabled = selectionState.hasSelection()) {
@@ -193,6 +196,9 @@ fun SampleScreen() {
                 "LazyRow" -> {
                     val listState = rememberLazyListState()
                     val indexSelectionState = rememberIndexSelectionState<Int>(autoSaver())
+                    BackHandler(enabled = indexSelectionState.hasSelection()) {
+                        indexSelectionState.clearSelection()
+                    }
                     val indexMapA = rememberIndexItemMap(
                         state = indexSelectionState,
                         items = itemsA
@@ -329,10 +335,35 @@ fun SampleScreen() {
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                TextButton(onClick = { /*TODO*/ }) {
+                TextButton(onClick = {
+                    itemsA.shuffle()
+                    itemsB.shuffle()
+                }) {
                     Text(text = "Shuffle")
                 }
-                TextButton(onClick = { /*TODO*/ }) {
+                var showSelectedItemsDialog by rememberSaveable { mutableStateOf(false) }
+                if (showSelectedItemsDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showSelectedItemsDialog = false },
+                        confirmButton = {
+                            TextButton(onClick = { showSelectedItemsDialog = false }) {
+                                Text(text = stringResource(android.R.string.ok))
+                            }
+                        },
+                        text = {
+                            Text(
+                                text = selectionState.selectedKeys()
+                                    .zip(selectionState.selectedItems())
+                                    .joinToString("\n") { (key, item) ->
+                                        "$key - $item"
+                                    }
+                            )
+                        }
+                    )
+                }
+                TextButton(onClick = {
+                    showSelectedItemsDialog = true
+                }) {
                     Text(text = "Show selected items")
                 }
             }
