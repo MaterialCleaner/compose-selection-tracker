@@ -33,8 +33,10 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -63,12 +65,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import me.gm.selection.IntervalHelper
+import me.gm.selection.KeyIndexItemMap
+import me.gm.selection.SelectionState
 import me.gm.selection.grid.dragAfterLongPressToSelectGesture
 import me.gm.selection.grid.selectableItems
 import me.gm.selection.grid.tapInActionModeToToggleGesture
 import me.gm.selection.list.dragAfterLongPressToSelectGesture
 import me.gm.selection.list.selectableItems
+import me.gm.selection.list.tapInActionModeToToggleGesture
 import me.gm.selection.plus
+import me.gm.selection.rememberIndexItemMap
+import me.gm.selection.rememberIndexSelectionState
 import me.gm.selection.rememberKeyItemMap
 import me.gm.selection.rememberKeySelectionState
 
@@ -120,14 +127,14 @@ fun SampleScreen() {
         var selectedOption by rememberSaveable { mutableStateOf("LazyColumn") }
 
         val mapA = rememberKeyItemMap(
+            state = selectionState,
             items = itemsA,
             key = { item -> "A" to item },
-            state = selectionState
         )
         val mapB = rememberKeyItemMap(
+            state = selectionState,
             items = itemsB,
             key = { item -> "B" to item },
-            state = selectionState
         )
         Column(
             modifier = Modifier
@@ -183,6 +190,42 @@ fun SampleScreen() {
                     }
                 }
 
+                "LazyRow" -> {
+                    val listState = rememberLazyListState()
+                    val indexSelectionState = rememberIndexSelectionState<Int>(autoSaver())
+                    val indexMapA = rememberIndexItemMap(
+                        state = indexSelectionState,
+                        items = itemsA
+                    )
+                    LazyRow(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .weight(1f)
+                            .tapInActionModeToToggleGesture(
+                                listState,
+                                indexSelectionState as SelectionState<Any, Int>,
+                                indexMapA as KeyIndexItemMap<Any, Int>
+                            )
+                            .dragAfterLongPressToSelectGesture(
+                                listState,
+                                indexSelectionState as SelectionState<Any, Int>,
+                                indexMapA as KeyIndexItemMap<Any, Int>
+                            ),
+                        state = listState
+                    ) {
+                        selectableItems(
+                            state = indexSelectionState,
+                            map = indexMapA,
+                        ) { helper, item ->
+                            SampleListItem(
+                                modifier = Modifier.animateItemPlacement(),
+                                helper = helper,
+                                text = "ItemA $item",
+                            )
+                        }
+                    }
+                }
+
                 "LazyVerticalGrid" -> {
                     val gridState = rememberLazyGridState()
                     LazyVerticalGrid(
@@ -190,8 +233,12 @@ fun SampleScreen() {
                         modifier = Modifier
                             .fillMaxSize()
                             .weight(1f)
-                            .tapInActionModeToToggleGesture(gridState, selectionState, mapA)
-                            .dragAfterLongPressToSelectGesture(gridState, selectionState, mapA),
+                            .tapInActionModeToToggleGesture(
+                                gridState, selectionState, mapA + mapB
+                            )
+                            .dragAfterLongPressToSelectGesture(
+                                gridState, selectionState, mapA + mapB
+                            ),
                         state = gridState
                     ) {
                         selectableItems(
@@ -203,6 +250,57 @@ fun SampleScreen() {
                                 modifier = Modifier.animateItemPlacement(),
                                 helper = helper,
                                 text = "ItemA $item",
+                            )
+                        }
+                        selectableItems(
+                            state = selectionState,
+                            map = mapB,
+                            span = { GridItemSpan(1) },
+                        ) { helper, item ->
+                            SampleListItem(
+                                modifier = Modifier.animateItemPlacement(),
+                                helper = helper,
+                                text = "ItemB $item",
+                            )
+                        }
+                    }
+                }
+
+                "LazyHorizontalGrid" -> {
+                    val gridState = rememberLazyGridState()
+                    LazyHorizontalGrid(
+                        rows = GridCells.Fixed(4),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .weight(1f)
+                            .tapInActionModeToToggleGesture(
+                                gridState, selectionState, mapA + mapB
+                            )
+                            .dragAfterLongPressToSelectGesture(
+                                gridState, selectionState, mapA + mapB
+                            ),
+                        state = gridState
+                    ) {
+                        selectableItems(
+                            state = selectionState,
+                            map = mapA,
+                            span = { GridItemSpan(2) },
+                        ) { helper, item ->
+                            SampleListItem(
+                                modifier = Modifier.animateItemPlacement(),
+                                helper = helper,
+                                text = "ItemA $item",
+                            )
+                        }
+                        selectableItems(
+                            state = selectionState,
+                            map = mapB,
+                            span = { GridItemSpan(1) },
+                        ) { helper, item ->
+                            SampleListItem(
+                                modifier = Modifier.animateItemPlacement(),
+                                helper = helper,
+                                text = "ItemB $item",
                             )
                         }
                     }

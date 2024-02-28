@@ -43,7 +43,7 @@ interface IndexItemMap<V> : KeyIndexItemMap<Int, V>
  */
 @Composable
 private fun <V> AutoDeselectEffect(
-    state: KeySelectionState<V>,
+    state: SelectionState<Any, V>,
     items: List<V>,
     key: (index: Int, item: V) -> Any,
 ) = LaunchedEffect(items) {
@@ -62,7 +62,6 @@ fun <V> rememberKeyItemMap(
     key: (item: V) -> Any,
 ): KeyItemMap<V> {
     if (state != null) {
-        // Deselect removed items.
         AutoDeselectEffect(state, items) { index, item -> key(item) }
     }
 
@@ -78,7 +77,6 @@ fun <V> rememberKeyItemMap(
     key: (index: Int, item: V) -> Any,
 ): KeyItemMap<V> {
     if (state != null) {
-        // Deselect removed items.
         AutoDeselectEffect(state, items, key)
     }
 
@@ -115,12 +113,11 @@ open class KeyItemMapImpl<V>(
 
 @Composable
 fun <V> rememberIndexItemMap(
-    state: KeySelectionState<V>? = null,
+    state: IndexSelectionState<V>? = null,
     items: List<V>,
 ): IndexItemMap<V> {
     if (state != null) {
-        // Deselect removed items.
-        AutoDeselectEffect(state, items) { index, item -> index }
+        AutoDeselectEffect(state as SelectionState<Any, V>, items) { index, item -> index }
     }
 
     return remember(items) {
