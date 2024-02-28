@@ -5,6 +5,8 @@
 Selection library for the Jetpack Compose LazyList and LazyGrid.
 
 ## Preview
+![Screenrecorder-2024-02-28-21-29-36-132](https://github.com/MaterialCleaner/compose-selection-tracker/assets/46047320/49986b22-a20d-4a55-ad91-1049108033b8)
+![Screenrecorder-2024-02-28-21-31-01-665](https://github.com/MaterialCleaner/compose-selection-tracker/assets/46047320/aaa993a1-3a16-4f3e-8015-33fe4ba6fae9)
 
 ## Background
 
