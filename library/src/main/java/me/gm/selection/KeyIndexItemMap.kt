@@ -20,7 +20,10 @@ import android.util.Log
 import androidx.collection.MutableScatterMap
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 
 /**
  * @see [androidx.compose.foundation.lazy.layout.LazyLayoutKeyIndexMap]
@@ -61,32 +64,46 @@ private fun <V> AutoDeselectEffect(
  * @see [androidx.compose.foundation.lazy.rememberLazyListItemProviderLambda]
  */
 @Composable
-fun <V> rememberKeyItemMap(
+fun <V> rememberKeyItemMapLambda(
     state: KeySelectionState<V>? = null,
     items: List<V>,
     key: (item: V) -> Any,
-): KeyItemMap<V> {
+): () -> KeyItemMap<V> {
     if (state != null) {
         AutoDeselectEffect(state, items) { index, item -> key(item) }
     }
 
-    return remember(items, key) {
-        KeyItemMapImpl(items) { index -> key(items[index]) }
+    val latestItems = rememberUpdatedState(items)
+    val latestKey = rememberUpdatedState(key)
+    return remember {
+        val itemMapState = derivedStateOf(referentialEqualityPolicy()) {
+            KeyItemMapImpl(latestItems.value) { index ->
+                latestKey.value(latestItems.value[index])
+            }
+        }
+        itemMapState::value
     }
 }
 
 @Composable
-fun <V> rememberKeyItemMap(
+fun <V> rememberKeyItemMapLambda(
     state: KeySelectionState<V>? = null,
     items: List<V>,
     key: (index: Int, item: V) -> Any,
-): KeyItemMap<V> {
+): () -> KeyItemMap<V> {
     if (state != null) {
         AutoDeselectEffect(state, items, key)
     }
 
-    return remember(items, key) {
-        KeyItemMapImpl(items) { index -> key(index, items[index]) }
+    val latestItems = rememberUpdatedState(items)
+    val latestKey = rememberUpdatedState(key)
+    return remember {
+        val itemMapState = derivedStateOf(referentialEqualityPolicy()) {
+            KeyItemMapImpl(latestItems.value) { index ->
+                latestKey.value(index, latestItems.value[index])
+            }
+        }
+        itemMapState::value
     }
 }
 
@@ -117,16 +134,20 @@ open class KeyItemMapImpl<V>(
 }
 
 @Composable
-fun <V> rememberIndexItemMap(
+fun <V> rememberIndexItemMapLambda(
     state: IndexSelectionState<V>? = null,
     items: List<V>,
-): IndexItemMap<V> {
+): () -> IndexItemMap<V> {
     if (state != null) {
         AutoDeselectEffect(state as SelectionState<Any, V>, items) { index, item -> index }
     }
 
+    val latestItems = rememberUpdatedState(items)
     return remember(items) {
-        IndexItemMapImpl(items)
+        val itemMapState = derivedStateOf(referentialEqualityPolicy()) {
+            IndexItemMapImpl(latestItems.value)
+        }
+        itemMapState::value
     }
 }
 
@@ -144,14 +165,14 @@ open class IndexItemMapImpl<V>(
  * This can only be used as a parameter for modifiers.
  */
 private class CombinedKeyItemMap<V>(
-    val maps: MutableList<KeyItemMap<V>>,
+    val maps: MutableList<() -> KeyItemMap<V>>,
     override val items: List<V> = emptyList(),
     override val key: (Int) -> Any = { throw UnsupportedOperationException() }
 ) : KeyItemMap<V> {
 
     override fun getItem(e: Any): V? {
         for (map in maps) {
-            val item = map.getItem(e)
+            val item = map().getItem(e)
             if (item != null) {
                 return item
             }
@@ -163,12 +184,13 @@ private class CombinedKeyItemMap<V>(
         throw UnsupportedOperationException()
 }
 
-operator fun <V> KeyItemMap<V>.plus(other: KeyItemMap<V>): KeyItemMap<V> {
-    return if (this is CombinedKeyItemMap) {
-        this.maps.add(other)
+operator fun <V> (() -> KeyItemMap<V>).plus(other: () -> KeyItemMap<V>): () -> KeyItemMap<V> {
+    val thiz = this()
+    return if (thiz is CombinedKeyItemMap) {
+        thiz.maps.add(other)
         this
     } else {
-        CombinedKeyItemMap(mutableListOf(this, other))
+        { CombinedKeyItemMap(mutableListOf(this, other)) }
     }
 }
 

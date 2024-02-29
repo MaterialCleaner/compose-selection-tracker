@@ -33,11 +33,15 @@ once? This is the most important reason I created this library: to modularize se
 
 ## Integration
 
-Gradle:
+Not yet released.
 
-```gradle
-implementation 'me.gm.selection:library:1.0.0'
-```
+[//]: # (Gradle:)
+
+[//]: # (```gradle)
+
+[//]: # (implementation 'me.gm.selection:library:1.0.0')
+
+[//]: # (```)
 
 ## Usage
 

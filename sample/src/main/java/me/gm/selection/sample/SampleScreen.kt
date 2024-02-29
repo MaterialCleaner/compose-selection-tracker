@@ -77,9 +77,9 @@ import me.gm.selection.list.dragAfterLongPressToSelectGesture
 import me.gm.selection.list.selectableItems
 import me.gm.selection.list.tapInActionModeToToggleGesture
 import me.gm.selection.plus
-import me.gm.selection.rememberIndexItemMap
+import me.gm.selection.rememberIndexItemMapLambda
 import me.gm.selection.rememberIndexSelectionState
-import me.gm.selection.rememberKeyItemMap
+import me.gm.selection.rememberKeyItemMapLambda
 import me.gm.selection.rememberKeySelectionState
 
 @OptIn(
@@ -129,11 +129,11 @@ fun SampleScreen() {
     ) { contentPadding ->
         var selectedOption by rememberSaveable { mutableStateOf("LazyColumn") }
 
-        val mapA = rememberKeyItemMap(
+        val mapA = rememberKeyItemMapLambda(
             items = itemsA,
             key = { item -> "A" to item },
         )
-        val mapB = rememberKeyItemMap(
+        val mapB = rememberKeyItemMapLambda(
             items = itemsB,
             key = { item -> "B" to item },
         )
@@ -197,7 +197,7 @@ fun SampleScreen() {
                     BackHandler(enabled = indexSelectionState.hasSelection()) {
                         indexSelectionState.clearSelection()
                     }
-                    val indexMapA = rememberIndexItemMap(
+                    val indexMapA = rememberIndexItemMapLambda(
                         state = indexSelectionState,
                         items = itemsA
                     )
@@ -208,12 +208,12 @@ fun SampleScreen() {
                             .tapInActionModeToToggleGesture(
                                 listState,
                                 indexSelectionState as SelectionState<Any, Int>,
-                                indexMapA as KeyIndexItemMap<Any, Int>
+                                indexMapA as () -> KeyIndexItemMap<Any, Int>
                             )
                             .dragAfterLongPressToSelectGesture(
                                 listState,
                                 indexSelectionState as SelectionState<Any, Int>,
-                                indexMapA as KeyIndexItemMap<Any, Int>
+                                indexMapA as () -> KeyIndexItemMap<Any, Int>
                             ),
                         state = listState
                     ) {
@@ -371,7 +371,7 @@ fun SampleScreen() {
 
 @Composable
 private fun SampleListItem(
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
     helper: IntervalHelper<*>,
     text: String
 ) {

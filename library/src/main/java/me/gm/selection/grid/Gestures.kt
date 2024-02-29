@@ -45,14 +45,14 @@ import me.gm.selection.detectTapGestures
 abstract class LazyGridDetailsLookup<V> : DetailsLookup<LazyGridItemInfo, V>
 
 private class FullyInteractiveLazyGridDetailsLookup<V>(
-    private val map: KeyIndexItemMap<Any, V>,
-    private val key: (itemInfo: LazyGridItemInfo) -> Any = when (map) {
+    private val map: () -> KeyIndexItemMap<Any, V>,
+    private val key: (itemInfo: LazyGridItemInfo) -> Any = when (map()) {
         is KeyItemMap -> { itemInfo -> itemInfo.key }
         is IndexItemMap -> { itemInfo -> itemInfo.index }
     }
 ) : LazyGridDetailsLookup<V>() {
 
-    override fun getItem(itemInfo: LazyGridItemInfo): V? = map.getItem(key(itemInfo))
+    override fun getItem(itemInfo: LazyGridItemInfo): V? = map().getItem(key(itemInfo))
 }
 
 private fun touchInfo(
@@ -110,7 +110,7 @@ fun <V> Modifier.longPressToToggleGesture(
 fun <V> Modifier.longPressToToggleGesture(
     gridState: LazyGridState,
     selectionState: SelectionState<Any, V>,
-    map: KeyIndexItemMap<Any, V>,
+    map: () -> KeyIndexItemMap<Any, V>,
 ): Modifier = longPressToToggleGesture(
     gridState,
     selectionState,
@@ -138,7 +138,7 @@ fun <V> Modifier.tapInActionModeToToggleGesture(
 fun <V> Modifier.tapInActionModeToToggleGesture(
     gridState: LazyGridState,
     selectionState: SelectionState<Any, V>,
-    map: KeyIndexItemMap<Any, V>,
+    map: () -> KeyIndexItemMap<Any, V>,
 ): Modifier = tapInActionModeToToggleGesture(
     gridState,
     selectionState,
@@ -242,7 +242,7 @@ fun <V> Modifier.dragAfterLongPressToSelectGesture(
 fun <V> Modifier.dragAfterLongPressToSelectGesture(
     gridState: LazyGridState,
     selectionState: SelectionState<Any, V>,
-    map: KeyIndexItemMap<Any, V>,
+    map: () -> KeyIndexItemMap<Any, V>,
 ): Modifier = dragAfterLongPressToSelectGesture(
     gridState,
     selectionState,

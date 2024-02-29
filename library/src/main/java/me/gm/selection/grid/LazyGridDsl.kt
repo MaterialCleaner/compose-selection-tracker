@@ -52,14 +52,14 @@ inline fun <T> LazyGridScope.selectableItems(
 
 inline fun <T> LazyGridScope.selectableItems(
     state: SelectionState<Any, T>,
-    map: KeyItemMap<T>,
+    map: () -> KeyItemMap<T>,
     noinline span: (LazyGridItemSpanScope.(item: T) -> GridItemSpan)? = null,
     noinline contentType: (item: T) -> Any? = { null },
     crossinline itemContent: @Composable LazyGridItemScope.(helper: IntervalHelper<T>, item: T) -> Unit
 ) {
-    val items = map.items
+    val items = map().items
     val itemProvider = { index: Int -> items[index] }
-    val keyProvider = map.key
+    val keyProvider = map().key
     items(
         count = items.size,
         key = keyProvider,
@@ -73,13 +73,14 @@ inline fun <T> LazyGridScope.selectableItems(
     }
 }
 
+@JvmName("selectableItemsWithIndexItemMap")
 inline fun <T> LazyGridScope.selectableItems(
     state: SelectionState<Any, T>,
-    map: IndexItemMap<T>,
+    map: () -> IndexItemMap<T>,
     noinline span: (LazyGridItemSpanScope.(item: T) -> GridItemSpan)? = null,
     noinline contentType: (item: T) -> Any? = { null },
     crossinline itemContent: @Composable LazyGridItemScope.(helper: IntervalHelper<T>, item: T) -> Unit
-) = selectableItems(state, map.items, null, span, contentType, itemContent)
+) = selectableItems(state, map().items, null, span, contentType, itemContent)
 
 /** ListIndexed */
 inline fun <T> LazyGridScope.selectableItemsIndexed(
@@ -107,14 +108,14 @@ inline fun <T> LazyGridScope.selectableItemsIndexed(
 
 inline fun <T> LazyGridScope.selectableItemsIndexed(
     state: SelectionState<Any, T>,
-    map: KeyItemMap<T>,
+    map: () -> KeyItemMap<T>,
     noinline span: (LazyGridItemSpanScope.(index: Int, item: T) -> GridItemSpan)? = null,
     crossinline contentType: (index: Int, item: T) -> Any? = { _, _ -> null },
     crossinline itemContent: @Composable LazyGridItemScope.(helper: IntervalHelper<T>, index: Int, item: T) -> Unit
 ) {
-    val items = map.items
+    val items = map().items
     val itemProvider = { index: Int -> items[index] }
-    val keyProvider = map.key
+    val keyProvider = map().key
     items(
         count = items.size,
         key = keyProvider,
@@ -128,13 +129,14 @@ inline fun <T> LazyGridScope.selectableItemsIndexed(
     }
 }
 
+@JvmName("selectableItemsWithIndexItemMap")
 inline fun <T> LazyGridScope.selectableItemsIndexed(
     state: SelectionState<Any, T>,
-    map: IndexItemMap<T>,
+    map: () -> IndexItemMap<T>,
     noinline span: (LazyGridItemSpanScope.(index: Int, item: T) -> GridItemSpan)? = null,
     crossinline contentType: (index: Int, item: T) -> Any? = { _, _ -> null },
     crossinline itemContent: @Composable LazyGridItemScope.(helper: IntervalHelper<T>, index: Int, item: T) -> Unit
-) = selectableItemsIndexed(state, map.items, null, span, contentType, itemContent)
+) = selectableItemsIndexed(state, map().items, null, span, contentType, itemContent)
 
 /** Array */
 inline fun <T> LazyGridScope.selectableItems(
