@@ -36,7 +36,7 @@ import androidx.compose.runtime.toMutableStateMap
  */
 @Composable
 fun <V> rememberKeySelectionState(
-    selectedItemsSaver: Saver<List<V>, Any> = noOpSaver(),
+    selectedItemsSaver: Saver<List<V>, Any> = dangingSaver(),
     initialSelection: Iterable<Pair<Any, V>> = emptyList(),
 ): KeySelectionState<V> {
     return rememberSaveable(
@@ -123,9 +123,15 @@ abstract class SelectionSupport<K, V>(
     final override fun selectedItems(): List<V> = selection.values.toList()
 }
 
+abstract class DangingKeysSupport<K, V>(
+    initialSelection: Iterable<Pair<K, V>>,
+    internal val dangingKeys: MutableList<K>
+) : SelectionSupport<K, V>(initialSelection)
+
 class KeySelectionState<V>(
-    initialSelection: Iterable<Pair<Any, V>>
-) : SelectionSupport<Any, V>(initialSelection) {
+    initialSelection: Iterable<Pair<Any, V>>,
+    dangingKeys: MutableList<Any> = mutableListOf()
+) : DangingKeysSupport<Any, V>(initialSelection, dangingKeys) {
 
     companion object {
         /** The default [Saver] for [KeySelectionState]. */
@@ -135,7 +141,9 @@ class KeySelectionState<V>(
                 restore = {
                     val selectedKeys = it.first
                     val selectedItems = selectedItemsSaver.restore(it.second)
-                    if (selectedKeys.size != selectedItems?.size) {
+                    if (selectedItemsSaver === DangingSaver) {
+                        KeySelectionState(emptyList(), selectedKeys.toMutableList())
+                    } else if (selectedKeys.size != selectedItems?.size) {
                         // Data cleared or corrupted, drop it.
                         KeySelectionState(emptyList())
                     } else {

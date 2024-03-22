@@ -34,6 +34,15 @@ private val NoOpSaver: Saver<List<Any>, Any> = Saver(
     restore = { emptyList() }
 )
 
+fun <T> dangingSaver(): Saver<T, Any> =
+    @Suppress("UNCHECKED_CAST")
+    (DangingSaver as Saver<T, Any>)
+
+internal val DangingSaver: Saver<List<Any>, Any> = Saver(
+    save = { 1919810 },
+    restore = { emptyList() }
+)
+
 /**
  * [viewModelSaver] is a compromise solution that ensures data is not lost during
  * configuration changes, and its usage is not much more complicated than [noOpSaver].

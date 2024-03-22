@@ -53,7 +53,11 @@ private fun <V> AutoDeselectEffect(
 ) = LaunchedEffect(items) {
     val currentSelectedKeys = state.selectedKeys()
     val newKeys = items.mapIndexed(key).toSet()
-    currentSelectedKeys.filterNot { it in newKeys }.forEach { key -> state.deselect(key) }
+    currentSelectedKeys.filterNot { it in newKeys }.forEach { key ->
+        if (state !is KeySelectionState || key !in state.dangingKeys) {
+            state.deselect(key)
+        }
+    }
     val deselectedItemCount = currentSelectedKeys.size - state.selectedKeys().size
     if (deselectedItemCount > 0) {
         Log.d("AutoDeselectEffect", "Automatically deselect $deselectedItemCount items.")
@@ -62,29 +66,17 @@ private fun <V> AutoDeselectEffect(
 
 /**
  * @see [androidx.compose.foundation.lazy.rememberLazyListItemProviderLambda]
+ * @param state a [KeySelectionState] object that store the selection state.
+ * If you set up this parameter, removed keys will be automatically deselected when items change.
+ * It's recommended to pass `null` if you're using multiple [KeyIndexItemMap]s.
+ * @param items the data list
+ * @param key a factory of stable and unique keys representing the item. Using the same key
+ * for multiple items in the list is not allowed. Type of the key should be saveable
+ * via Bundle on Android. If null is passed the position in the list will represent the key.
+ * When you specify the key the scroll position will be maintained based on the key, which
+ * means if you add/remove items before the current visible item the item with the given key
+ * will be kept as the first visible one.
  */
-@Composable
-fun <V> rememberKeyItemMapLambda(
-    state: KeySelectionState<V>? = null,
-    items: List<V>,
-    key: (item: V) -> Any,
-): () -> KeyItemMap<V> {
-    if (state != null) {
-        AutoDeselectEffect(state, items) { index, item -> key(item) }
-    }
-
-    val latestItems = rememberUpdatedState(items)
-    val latestKey = rememberUpdatedState(key)
-    return remember {
-        val itemMapState = derivedStateOf(referentialEqualityPolicy()) {
-            KeyItemMapImpl(latestItems.value) { index ->
-                latestKey.value(latestItems.value[index])
-            }
-        }
-        itemMapState::value
-    }
-}
-
 @Composable
 fun <V> rememberKeyItemMapLambda(
     state: KeySelectionState<V>? = null,
@@ -104,7 +96,28 @@ fun <V> rememberKeyItemMapLambda(
             }
         }
         itemMapState::value
+    }.apply {
+        if (state?.dangingKeys?.isNotEmpty() == true) {
+            val iterator = state.dangingKeys.iterator()
+            while (iterator.hasNext()) {
+                val dangingKey = iterator.next()
+                val item = this().getItem(dangingKey)
+                if (item != null) {
+                    state.select(dangingKey, item)
+                    iterator.remove()
+                }
+            }
+        }
     }
+}
+
+@Composable
+fun <V> rememberKeyItemMapLambda(
+    state: KeySelectionState<V>? = null,
+    items: List<V>,
+    key: (item: V) -> Any,
+): () -> KeyItemMap<V> {
+    return rememberKeyItemMapLambda(state, items) { index, item -> key(item) }
 }
 
 /**
