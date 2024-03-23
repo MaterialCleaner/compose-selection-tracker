@@ -36,7 +36,7 @@ import androidx.compose.runtime.toMutableStateMap
  */
 @Composable
 fun <V> rememberKeySelectionState(
-    selectedItemsSaver: Saver<List<V>, Any> = dangingSaver(),
+    selectedItemsSaver: Saver<List<V>, Any> = noOpSaver(),
     initialSelection: Iterable<Pair<Any, V>> = emptyList(),
 ): KeySelectionState<V> {
     return rememberSaveable(
