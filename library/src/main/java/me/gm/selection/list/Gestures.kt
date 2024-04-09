@@ -25,8 +25,10 @@ import androidx.compose.foundation.lazy.LazyListItemInfo
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
 import kotlinx.coroutines.coroutineScope
@@ -100,14 +102,17 @@ fun <V> Modifier.longPressToToggleGesture(
     listState: LazyListState,
     selectionState: SelectionState<Any, V>,
     detailsLookup: LazyListDetailsLookup<V>,
-): Modifier = pointerInput(Unit) {
-    detectTapGestures(
-        onLongPress = { offset ->
-            val (touchedItem, item) = itemDetails(listState, offset, detailsLookup)
-                ?: return@detectTapGestures false
-            selectionState.toggle(selectionState.key(touchedItem), item)
-        }
-    )
+): Modifier = composed {
+    @Suppress("NAME_SHADOWING") val listState by rememberUpdatedState(listState)
+    pointerInput(Unit) {
+        detectTapGestures(
+            onLongPress = { offset ->
+                val (touchedItem, item) = itemDetails(listState, offset, detailsLookup)
+                    ?: return@detectTapGestures false
+                selectionState.toggle(selectionState.key(touchedItem), item)
+            }
+        )
+    }
 }
 
 fun <V> Modifier.longPressToToggleGesture(
@@ -124,18 +129,21 @@ fun <V> Modifier.tapInActionModeToToggleGesture(
     listState: LazyListState,
     selectionState: SelectionState<Any, V>,
     detailsLookup: LazyListDetailsLookup<V>,
-): Modifier = pointerInput(selectionState.hasSelection()) {
-    if (!selectionState.hasSelection()) {
-        return@pointerInput
-    }
-    detectTapGestures(
-        onTap = { offset ->
-            val (touchedItem, item) = itemDetails(listState, offset, detailsLookup)
-                ?: return@detectTapGestures false
-            selectionState.toggle(selectionState.key(touchedItem), item)
-            return@detectTapGestures true
+): Modifier = composed {
+    @Suppress("NAME_SHADOWING") val listState by rememberUpdatedState(listState)
+    pointerInput(selectionState.hasSelection()) {
+        if (!selectionState.hasSelection()) {
+            return@pointerInput
         }
-    )
+        detectTapGestures(
+            onTap = { offset ->
+                val (touchedItem, item) = itemDetails(listState, offset, detailsLookup)
+                    ?: return@detectTapGestures false
+                selectionState.toggle(selectionState.key(touchedItem), item)
+                return@detectTapGestures true
+            }
+        )
+    }
 }
 
 fun <V> Modifier.tapInActionModeToToggleGesture(
@@ -201,43 +209,46 @@ fun <V> Modifier.dragAfterLongPressToSelectGesture(
     listState: LazyListState,
     selectionState: SelectionState<Any, V>,
     detailsLookup: LazyListDetailsLookup<V>,
-): Modifier = pointerInput(Unit) {
-    coroutineScope {
-        var rangeSupport: RangeSupport<V>? = null
-        detectDragGesturesAfterLongPress(
-            onDragStart = onDragStart@{ offset ->
-                val (touchedItem, item) = itemDetails(listState, offset, detailsLookup)
-                    ?: return@onDragStart
-                val selected = selectionState.toggle(selectionState.key(touchedItem), item)
-                if (selected) {
-                    rangeSupport = RangeSupport(
-                        listState, detailsLookup, selectionState, touchedItem.index, offset
-                    )
+): Modifier = composed {
+    @Suppress("NAME_SHADOWING") val listState by rememberUpdatedState(listState)
+    pointerInput(Unit) {
+        coroutineScope {
+            var rangeSupport: RangeSupport<V>? = null
+            detectDragGesturesAfterLongPress(
+                onDragStart = onDragStart@{ offset ->
+                    val (touchedItem, item) = itemDetails(listState, offset, detailsLookup)
+                        ?: return@onDragStart
+                    val selected = selectionState.toggle(selectionState.key(touchedItem), item)
+                    if (selected) {
+                        rangeSupport = RangeSupport(
+                            listState, detailsLookup, selectionState, touchedItem.index, offset
+                        )
+                    }
+                },
+                onDragEnd = {
+                    rangeSupport?.scroller?.stopScroll()
+                    rangeSupport = null
+                },
+                onDragCancel = {
+                    rangeSupport?.scroller?.stopScroll()
+                    rangeSupport = null
+                },
+            ) { change, _ ->
+                @Suppress("NAME_SHADOWING")
+                val rangeSupport = rangeSupport
+                rangeSupport ?: return@detectDragGesturesAfterLongPress
+                val onPositionChange = onPositionChange@{
+                    val (touchedItem, touchOffset) = touchInfo(listState, change.position)
+                        ?: return@onPositionChange
+                    if (detailsLookup.inDragRegion(touchedItem, touchOffset)) {
+                        rangeSupport.extendRange(touchedItem)
+                    }
                 }
-            },
-            onDragEnd = {
-                rangeSupport?.scroller?.stopScroll()
-                rangeSupport = null
-            },
-            onDragCancel = {
-                rangeSupport?.scroller?.stopScroll()
-                rangeSupport = null
-            },
-        ) { change, _ ->
-            @Suppress("NAME_SHADOWING")
-            val rangeSupport = rangeSupport
-            rangeSupport ?: return@detectDragGesturesAfterLongPress
-            val onPositionChange = onPositionChange@{
-                val (touchedItem, touchOffset) = touchInfo(listState, change.position)
-                    ?: return@onPositionChange
-                if (detailsLookup.inDragRegion(touchedItem, touchOffset)) {
-                    rangeSupport.extendRange(touchedItem)
+                launch {
+                    rangeSupport.scroller.computeScroll(change.position, onPositionChange)
                 }
+                onPositionChange()
             }
-            launch {
-                rangeSupport.scroller.computeScroll(change.position, onPositionChange)
-            }
-            onPositionChange()
         }
     }
 }
