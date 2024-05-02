@@ -29,18 +29,22 @@ fun <T> noOpSaver(): Saver<T, Any> =
     @Suppress("UNCHECKED_CAST")
     (NoOpSaver as Saver<T, Any>)
 
-private val NoOpSaver: Saver<List<Any>, Any> = Saver(
-    save = { 114514 },
-    restore = { emptyList() }
+private val NoOpSaver: Saver<Pair<List<Any>, List<Any>>, Any> = Saver(
+    save = { },
+    restore = { emptyList<Any>() to emptyList() }
 )
 
-fun <T> dangingSaver(): Saver<T, Any> =
+fun <T> danglingSaver(): Saver<T, Any> =
     @Suppress("UNCHECKED_CAST")
-    (DangingSaver as Saver<T, Any>)
+    (DanglingSaver as Saver<T, Any>)
 
-internal val DangingSaver: Saver<List<Any>, Any> = Saver(
-    save = { 1919810 },
-    restore = { emptyList() }
+internal val DanglingSaver: Saver<Pair<List<Any>, List<Any>>, List<Any>> = Saver(
+    save = { (keys, _) ->
+        keys
+    },
+    restore = { keys ->
+        keys to emptyList()
+    }
 )
 
 /**
@@ -67,16 +71,16 @@ internal val DangingSaver: Saver<List<Any>, Any> = Saver(
  */
 fun <T> viewModelSaver(): Saver<T, Any> =
     @Suppress("UNCHECKED_CAST")
-    (ViewModelSaver() as Saver<T, Any>)
+    (ViewModelSaver<T>() as Saver<T, Any>)
 
-class ViewModelSaver : Saver<List<Any>, UUID> {
-    private val saveableStateRegistry: MutableMap<UUID, List<Any>> = mutableMapOf()
+class ViewModelSaver<T> : Saver<Pair<List<Any>, List<T>>, UUID> {
+    private val saveableStateRegistry: MutableMap<UUID, Pair<List<Any>, List<T>>> = mutableMapOf()
 
-    override fun SaverScope.save(value: List<Any>): UUID {
+    override fun SaverScope.save(value: Pair<List<Any>, List<T>>): UUID {
         val uuid = UUID.randomUUID()
         saveableStateRegistry[uuid] = value
         return uuid
     }
 
-    override fun restore(value: UUID): List<Any>? = saveableStateRegistry[value]
+    override fun restore(value: UUID): Pair<List<Any>, List<T>>? = saveableStateRegistry[value]
 }

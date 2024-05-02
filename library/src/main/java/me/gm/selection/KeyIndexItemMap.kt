@@ -53,11 +53,9 @@ private fun <V> AutoDeselectEffect(
 ) = LaunchedEffect(items) {
     val currentSelectedKeys = state.selectedKeys()
     val newKeys = items.mapIndexed(key).toSet()
-    currentSelectedKeys.filterNot { it in newKeys }.forEach { key ->
-        if (state !is KeySelectionState || key !in state.dangingKeys) {
-            state.deselect(key)
-        }
-    }
+    currentSelectedKeys.asSequence()
+        .filterNot { it in newKeys }
+        .forEach { key -> state.deselect(key) }
     val deselectedItemCount = currentSelectedKeys.size - state.selectedKeys().size
     if (deselectedItemCount > 0) {
         Log.d("AutoDeselectEffect", "Automatically deselect $deselectedItemCount items.")
@@ -97,15 +95,15 @@ fun <V> rememberKeyItemMapLambda(
         }
         itemMapState::value
     }.apply {
-        if (state?.dangingKeys?.isNotEmpty() == true) {
-            val iterator = state.dangingKeys.iterator()
+        if (state?.danglingKeys?.isNotEmpty() == true) {
+            val iterator = state.danglingKeys.iterator()
             while (iterator.hasNext()) {
-                val dangingKey = iterator.next()
-                val item = this().getItem(dangingKey)
+                val danglingKey = iterator.next()
+                val item = this().getItem(danglingKey)
                 if (item != null) {
-                    state.select(dangingKey, item)
-                    iterator.remove()
+                    state.select(danglingKey, item)
                 }
+                iterator.remove()
             }
         }
     }

@@ -36,6 +36,6 @@ package me.gm.selection
  *          FastForward
  * ==============================
  */
-enum class ScrollMode {
+internal enum class ScrollMode {
     FastBackward, ModerateBackward, Idle, ModerateForward, FastForward
 }

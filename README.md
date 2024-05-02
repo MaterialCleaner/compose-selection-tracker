@@ -5,16 +5,17 @@
 Selection library for the Jetpack Compose LazyList and LazyGrid.
 
 ## Preview
+
 ![Screenrecorder-2024-02-28-21-29-36-132](https://github.com/MaterialCleaner/compose-selection-tracker/assets/46047320/49986b22-a20d-4a55-ad91-1049108033b8)
 ![Screenrecorder-2024-02-28-21-31-01-665](https://github.com/MaterialCleaner/compose-selection-tracker/assets/46047320/aaa993a1-3a16-4f3e-8015-33fe4ba6fae9)
 
 ## Background
 
-Selection is easy to implement. However, is it easy to stay elegant? I've seen some developers
-manage selection logic within the ViewModel. If there's only one place in the entire project that
-requires selection, this approach seems fine. However, if multiple areas require it, the selection
-logic will be duplicated across multiple ViewModels. Why not have these selection logics appear just
-once? This is the most important reason I created this library: to modularize selection for reuse.
+Selection is easy to implement, but what about staying elegant? I've seen some developers manage
+selection logic within the ViewModel. If there's only one place in the entire project that requires
+selection, this approach seems fine. However, if multiple areas require it, the selection codes will
+be duplicated across multiple ViewModels. Why not have these selection codes appear just once? This
+is the most important reason I created this library: to modularize selection for reuse.
 
 ## Features
 
