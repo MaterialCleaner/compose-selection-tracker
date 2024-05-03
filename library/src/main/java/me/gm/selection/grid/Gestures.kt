@@ -214,13 +214,14 @@ fun <V> Modifier.dragAfterLongPressToSelectGesture(
             detectDragGesturesAfterLongPress(
                 onDragStart = onDragStart@{ offset ->
                     val (touchedItem, item) = itemDetails(gridState, offset, detailsLookup)
-                        ?: return@onDragStart
+                        ?: return@onDragStart false
                     val selected = selectionState.toggle(selectionState.key(touchedItem), item)
                     if (selected) {
                         rangeSupport = RangeSupport(
                             gridState, detailsLookup, selectionState, touchedItem.index, offset
                         )
                     }
+                    return@onDragStart true
                 },
                 onDragEnd = {
                     rangeSupport?.scroller?.stopScroll()

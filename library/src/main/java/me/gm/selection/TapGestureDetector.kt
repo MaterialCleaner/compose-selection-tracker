@@ -168,7 +168,7 @@ private fun PointerEvent.isPointerUp(pointerId: PointerId): Boolean =
  * @see [androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress]
  */
 internal suspend fun PointerInputScope.detectDragGesturesAfterLongPress(
-    onDragStart: (Offset) -> Unit = { },
+    onDragStart: (Offset) -> Boolean = { true },
     onDragEnd: () -> Unit = { },
     onDragCancel: () -> Unit = { },
     onDrag: (change: PointerInputChange, dragAmount: Offset) -> Unit
@@ -180,7 +180,9 @@ internal suspend fun PointerInputScope.detectDragGesturesAfterLongPress(
             val down = awaitFirstDown(pass = pass)
             val drag = awaitLongPressOrCancellation(down.id, pass)
             if (drag != null) {
-                onDragStart(drag.position)
+                if (!onDragStart(drag.position)) {
+                    return@awaitEachGesture
+                }
                 val firstEventAfterLongPress = awaitPointerEvent(pass = pass)
                 // Since a long press event has already been triggered here,
                 // it is necessary for us to consume all subsequent events.
