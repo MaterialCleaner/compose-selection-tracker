@@ -20,7 +20,7 @@ android {
     }
     kotlinOptions { jvmTarget = JavaVersion.VERSION_1_8.toString() }
     buildFeatures { compose = true }
-    composeOptions { kotlinCompilerExtensionVersion = "1.5.8" }
+    composeOptions { kotlinCompilerExtensionVersion = "1.5.13" }
     signingConfigs {
         create("release") {
             storeFile = File(System.getenv("STORE_FILE") ?: "/dev/null")

@@ -30,7 +30,15 @@ fun <T> noOpSaver(): Saver<T, Any> =
     (NoOpSaver as Saver<T, Any>)
 
 private val NoOpSaver: Saver<Pair<List<Any>, List<Any>>, Any> = Saver(
-    save = { },
+    save = {
+        /*
+          java.lang.IllegalArgumentException: kotlin.Unit cannot be saved using the current
+          SaveableStateRegistry. The default implementation only supports types which can be stored
+          inside the Bundle. Please consider implementing a custom Saver for this class and pass
+          it to rememberSaveable().
+         */
+        114514
+    },
     restore = { emptyList<Any>() to emptyList() }
 )
 
