@@ -18,7 +18,7 @@ android {
     }
     kotlinOptions { jvmTarget = JavaVersion.VERSION_1_8.toString() }
     buildFeatures { compose = true }
-    composeOptions { kotlinCompilerExtensionVersion = "1.5.8" }
+    composeOptions { kotlinCompilerExtensionVersion = "1.5.13" }
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -27,7 +27,7 @@ android {
 }
 
 dependencies {
-    implementation(platform("androidx.compose:compose-bom:2024.02.01"))
+    implementation(platform("androidx.compose:compose-bom:2024.05.00"))
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")

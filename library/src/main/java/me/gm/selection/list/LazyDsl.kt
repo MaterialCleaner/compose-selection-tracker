@@ -27,7 +27,7 @@ import me.gm.selection.SelectionState
 inline fun <T> LazyListScope.selectableItems(
     state: SelectionState<Any, T>,
     items: List<T>,
-    noinline key: ((item: T) -> Any)?,
+    noinline key: ((item: T) -> Any)? = null,
     noinline contentType: (item: T) -> Any? = { null },
     crossinline itemContent: @Composable SelectableLazyItemScope.(helper: IntervalHelper<T>, item: T) -> Unit
 ) {

@@ -17,9 +17,6 @@
 package me.gm.selection
 
 import androidx.compose.runtime.saveable.Saver
-import androidx.compose.runtime.saveable.SaverScope
-import androidx.lifecycle.ViewModel
-import java.util.UUID
 
 /**
  * If you are indifferent to data loss,
@@ -54,41 +51,3 @@ internal val DanglingSaver: Saver<Pair<List<Any>, List<Any>>, List<Any>> = Saver
         keys to emptyList()
     }
 )
-
-/**
- * [viewModelSaver] is a compromise solution that ensures data is not lost during
- * configuration changes, and its usage is not much more complicated than [noOpSaver].
- * However, data will still be lost after process recreation
- * (you can test this by enabling 'Don't keep activities' in the developer options).
- *
- * Usage:
- *
- * Place the [viewModelSaver] object in your [ViewModel].
- * ```
- * class MyViewModel : ViewModel() {
- *     val saver: Saver<List<V>, Any> = viewModelSaver()
- * }
- * ```
- *
- * In any composable function, pass the [viewModelSaver] object to
- * [rememberKeySelectionState] or [rememberIndexSelectionState].
- * ```
- * val viewModel = viewModel<MyViewModel>()
- * val selectionState = rememberKeySelectionState(viewModel.saver)
- * ```
- */
-fun <T> viewModelSaver(): Saver<T, Any> =
-    @Suppress("UNCHECKED_CAST")
-    (ViewModelSaver<T>() as Saver<T, Any>)
-
-class ViewModelSaver<T> : Saver<Pair<List<Any>, List<T>>, UUID> {
-    private val saveableStateRegistry: MutableMap<UUID, Pair<List<Any>, List<T>>> = mutableMapOf()
-
-    override fun SaverScope.save(value: Pair<List<Any>, List<T>>): UUID {
-        val uuid = UUID.randomUUID()
-        saveableStateRegistry[uuid] = value
-        return uuid
-    }
-
-    override fun restore(value: UUID): Pair<List<Any>, List<T>>? = saveableStateRegistry[value]
-}
