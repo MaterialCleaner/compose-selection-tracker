@@ -129,7 +129,7 @@ abstract class DanglingKeysSupport<K, V>(
 ) : SelectionSupport<K, V>(initialSelection)
 
 class KeySelectionState<V>(
-    initialSelection: Iterable<Pair<Any, V>>,
+    initialSelection: Iterable<Pair<Any, V>> = emptyList(),
     danglingKeys: MutableList<Any> = mutableListOf()
 ) : DanglingKeysSupport<Any, V>(initialSelection, danglingKeys) {
 
@@ -154,7 +154,7 @@ class KeySelectionState<V>(
 }
 
 class IndexSelectionState<V>(
-    initialSelection: Iterable<Pair<Int, V>>
+    initialSelection: Iterable<Pair<Int, V>> = emptyList()
 ) : SelectionSupport<Int, V>(initialSelection) {
 
     companion object {
