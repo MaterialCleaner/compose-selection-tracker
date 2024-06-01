@@ -47,6 +47,7 @@ import me.gm.selection.detectTapGestures
 abstract class LazyGridDetailsLookup<V> : DetailsLookup<LazyGridItemInfo, V>
 
 private class FullyInteractiveLazyGridDetailsLookup<V>(
+    private val enabled: () -> Boolean,
     private val map: () -> KeyIndexItemMap<Any, V>,
     private val key: (itemInfo: LazyGridItemInfo) -> Any = when (map()) {
         is KeyItemMap -> { itemInfo -> itemInfo.key }
@@ -54,7 +55,12 @@ private class FullyInteractiveLazyGridDetailsLookup<V>(
     }
 ) : LazyGridDetailsLookup<V>() {
 
-    override fun getItem(itemInfo: LazyGridItemInfo): V? = map().getItem(key(itemInfo))
+    override fun getItem(itemInfo: LazyGridItemInfo): V? =
+        if (enabled()) {
+            map().getItem(key(itemInfo))
+        } else {
+            null
+        }
 }
 
 private fun touchInfo(
@@ -116,10 +122,11 @@ fun <V> Modifier.longPressToToggleGesture(
     gridState: LazyGridState,
     selectionState: SelectionState<Any, V>,
     map: () -> KeyIndexItemMap<Any, V>,
+    enabled: () -> Boolean = { true },
 ): Modifier = longPressToToggleGesture(
     gridState,
     selectionState,
-    FullyInteractiveLazyGridDetailsLookup(map)
+    FullyInteractiveLazyGridDetailsLookup(enabled, map)
 )
 
 fun <V> Modifier.tapInActionModeToToggleGesture(
@@ -147,10 +154,11 @@ fun <V> Modifier.tapInActionModeToToggleGesture(
     gridState: LazyGridState,
     selectionState: SelectionState<Any, V>,
     map: () -> KeyIndexItemMap<Any, V>,
+    enabled: () -> Boolean = { true },
 ): Modifier = tapInActionModeToToggleGesture(
     gridState,
     selectionState,
-    FullyInteractiveLazyGridDetailsLookup(map)
+    FullyInteractiveLazyGridDetailsLookup(enabled, map)
 )
 
 private class RangeSupport<V>(
@@ -255,8 +263,9 @@ fun <V> Modifier.dragAfterLongPressToSelectGesture(
     gridState: LazyGridState,
     selectionState: SelectionState<Any, V>,
     map: () -> KeyIndexItemMap<Any, V>,
+    enabled: () -> Boolean = { true },
 ): Modifier = dragAfterLongPressToSelectGesture(
     gridState,
     selectionState,
-    FullyInteractiveLazyGridDetailsLookup(map)
+    FullyInteractiveLazyGridDetailsLookup(enabled, map)
 )

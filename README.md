@@ -30,7 +30,6 @@ is the most important reason I created this library: to modularize selection for
 - Clean and Stable Implementation: Does not rely on any internal APIs or experimental APIs of
   LazyList and LazyGrid, so you don't have to worry about API changes or incompatibilities due to
   updates of Compose.
-- Highly Extensible: Provides multi-level interfaces and supports various complex use cases.
 
 ## Integration
 

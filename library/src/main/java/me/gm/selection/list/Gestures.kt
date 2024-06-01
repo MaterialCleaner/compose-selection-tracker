@@ -47,6 +47,7 @@ import me.gm.selection.detectTapGestures
 abstract class LazyListDetailsLookup<V> : DetailsLookup<LazyListItemInfo, V>
 
 private class FullyInteractiveLazyListDetailsLookup<V>(
+    private val enabled: () -> Boolean,
     private val map: () -> KeyIndexItemMap<Any, V>,
     private val key: (itemInfo: LazyListItemInfo) -> Any = when (map()) {
         is KeyItemMap -> { itemInfo -> itemInfo.key }
@@ -54,7 +55,12 @@ private class FullyInteractiveLazyListDetailsLookup<V>(
     }
 ) : LazyListDetailsLookup<V>() {
 
-    override fun getItem(itemInfo: LazyListItemInfo): V? = map().getItem(key(itemInfo))
+    override fun getItem(itemInfo: LazyListItemInfo): V? =
+        if (enabled()) {
+            map().getItem(key(itemInfo))
+        } else {
+            null
+        }
 }
 
 private fun touchInfo(
@@ -119,10 +125,11 @@ fun <V> Modifier.longPressToToggleGesture(
     listState: LazyListState,
     selectionState: SelectionState<Any, V>,
     map: () -> KeyIndexItemMap<Any, V>,
+    enabled: () -> Boolean = { true },
 ): Modifier = longPressToToggleGesture(
     listState,
     selectionState,
-    FullyInteractiveLazyListDetailsLookup(map)
+    FullyInteractiveLazyListDetailsLookup(enabled, map)
 )
 
 fun <V> Modifier.tapInActionModeToToggleGesture(
@@ -150,10 +157,11 @@ fun <V> Modifier.tapInActionModeToToggleGesture(
     listState: LazyListState,
     selectionState: SelectionState<Any, V>,
     map: () -> KeyIndexItemMap<Any, V>,
+    enabled: () -> Boolean = { true },
 ): Modifier = tapInActionModeToToggleGesture(
     listState,
     selectionState,
-    FullyInteractiveLazyListDetailsLookup(map)
+    FullyInteractiveLazyListDetailsLookup(enabled, map)
 )
 
 private class RangeSupport<V>(
@@ -258,8 +266,9 @@ fun <V> Modifier.dragAfterLongPressToSelectGesture(
     listState: LazyListState,
     selectionState: SelectionState<Any, V>,
     map: () -> KeyIndexItemMap<Any, V>,
+    enabled: () -> Boolean = { true },
 ): Modifier = dragAfterLongPressToSelectGesture(
     listState,
     selectionState,
-    FullyInteractiveLazyListDetailsLookup(map)
+    FullyInteractiveLazyListDetailsLookup(enabled, map)
 )
