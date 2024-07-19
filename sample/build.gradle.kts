@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     kotlin("android")
+    id("org.jetbrains.kotlin.plugin.compose") version "2.0.0"
 }
 
 android {
@@ -20,7 +21,6 @@ android {
     }
     kotlinOptions { jvmTarget = JavaVersion.VERSION_1_8.toString() }
     buildFeatures { compose = true }
-    composeOptions { kotlinCompilerExtensionVersion = "1.5.13" }
     signingConfigs {
         create("release") {
             storeFile = File(System.getenv("STORE_FILE") ?: "/dev/null")
@@ -45,8 +45,8 @@ android {
 dependencies {
     implementation(project(":library"))
 
-    implementation("androidx.activity:activity-compose:1.8.2")
-    implementation(platform("androidx.compose:compose-bom:2024.05.00"))
+    implementation("androidx.activity:activity-compose:1.9.0")
+    implementation(platform("androidx.compose:compose-bom:2024.06.00"))
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.animation:animation")
     implementation("androidx.compose.material:material-icons-core")
