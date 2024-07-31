@@ -21,12 +21,31 @@ import androidx.compose.foundation.lazy.grid.LazyGridItemScope
 import androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope
 import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.runtime.Composable
-import me.gm.selection.IndexItemMap
 import me.gm.selection.IntervalHelper
-import me.gm.selection.KeyItemMap
 import me.gm.selection.SelectionState
+import me.gm.selection.SelectionSupport
 
-/** List */
+inline fun <T> LazyGridScope.selectableItem(
+    state: SelectionState<Any, T>,
+    item: T,
+    key: Any? = null,
+    contentType: Any? = null,
+    crossinline content: @Composable LazyGridItemScope.(helper: IntervalHelper<T>) -> Unit
+) {
+    val itemProvider = { index: Int -> item }
+    val keyProvider = if (key != null) { index: Int -> key } else null
+    (state as? SelectionSupport)?.selectableItemsContent?.updateInterval(
+        this, 1, itemProvider, keyProvider
+    )
+    item(
+        key = key,
+        contentType = contentType
+    ) {
+        val helper = IntervalHelper(state, 0, itemProvider, keyProvider)
+        content(helper)
+    }
+}
+
 inline fun <T> LazyGridScope.selectableItems(
     state: SelectionState<Any, T>,
     items: List<T>,
@@ -37,6 +56,9 @@ inline fun <T> LazyGridScope.selectableItems(
 ) {
     val itemProvider = { index: Int -> items[index] }
     val keyProvider = if (key != null) { index: Int -> key(items[index]) } else null
+    (state as? SelectionSupport)?.selectableItemsContent?.updateInterval(
+        this, items.size, itemProvider, keyProvider
+    )
     items(
         count = items.size,
         key = keyProvider,
@@ -50,39 +72,6 @@ inline fun <T> LazyGridScope.selectableItems(
     }
 }
 
-inline fun <T> LazyGridScope.selectableItems(
-    state: SelectionState<Any, T>,
-    map: () -> KeyItemMap<T>,
-    noinline span: (LazyGridItemSpanScope.(item: T) -> GridItemSpan)? = null,
-    noinline contentType: (item: T) -> Any? = { null },
-    crossinline itemContent: @Composable LazyGridItemScope.(helper: IntervalHelper<T>, item: T) -> Unit
-) {
-    val items = map().items
-    val itemProvider = { index: Int -> items[index] }
-    val keyProvider = map().key
-    items(
-        count = items.size,
-        key = keyProvider,
-        span = if (span != null) {
-            { span(items[it]) }
-        } else null,
-        contentType = { index: Int -> contentType(items[index]) }
-    ) { index ->
-        val helper = IntervalHelper(state, index, itemProvider, keyProvider)
-        itemContent(helper, items[index])
-    }
-}
-
-@JvmName("selectableItemsWithIndexItemMap")
-inline fun <T> LazyGridScope.selectableItems(
-    state: SelectionState<Any, T>,
-    map: () -> IndexItemMap<T>,
-    noinline span: (LazyGridItemSpanScope.(item: T) -> GridItemSpan)? = null,
-    noinline contentType: (item: T) -> Any? = { null },
-    crossinline itemContent: @Composable LazyGridItemScope.(helper: IntervalHelper<T>, item: T) -> Unit
-) = selectableItems(state, map().items, null, span, contentType, itemContent)
-
-/** ListIndexed */
 inline fun <T> LazyGridScope.selectableItemsIndexed(
     state: SelectionState<Any, T>,
     items: List<T>,
@@ -93,6 +82,9 @@ inline fun <T> LazyGridScope.selectableItemsIndexed(
 ) {
     val itemProvider = { index: Int -> items[index] }
     val keyProvider = if (key != null) { index: Int -> key(index, items[index]) } else null
+    (state as? SelectionSupport)?.selectableItemsContent?.updateInterval(
+        this, items.size, itemProvider, keyProvider
+    )
     items(
         count = items.size,
         key = if (key != null) { index: Int -> key(index, items[index]) } else null,
@@ -106,39 +98,6 @@ inline fun <T> LazyGridScope.selectableItemsIndexed(
     }
 }
 
-inline fun <T> LazyGridScope.selectableItemsIndexed(
-    state: SelectionState<Any, T>,
-    map: () -> KeyItemMap<T>,
-    noinline span: (LazyGridItemSpanScope.(index: Int, item: T) -> GridItemSpan)? = null,
-    crossinline contentType: (index: Int, item: T) -> Any? = { _, _ -> null },
-    crossinline itemContent: @Composable LazyGridItemScope.(helper: IntervalHelper<T>, index: Int, item: T) -> Unit
-) {
-    val items = map().items
-    val itemProvider = { index: Int -> items[index] }
-    val keyProvider = map().key
-    items(
-        count = items.size,
-        key = keyProvider,
-        span = if (span != null) {
-            { span(it, items[it]) }
-        } else null,
-        contentType = { index -> contentType(index, items[index]) }
-    ) { index ->
-        val helper = IntervalHelper(state, index, itemProvider, keyProvider)
-        itemContent(helper, index, items[index])
-    }
-}
-
-@JvmName("selectableItemsWithIndexItemMap")
-inline fun <T> LazyGridScope.selectableItemsIndexed(
-    state: SelectionState<Any, T>,
-    map: () -> IndexItemMap<T>,
-    noinline span: (LazyGridItemSpanScope.(index: Int, item: T) -> GridItemSpan)? = null,
-    crossinline contentType: (index: Int, item: T) -> Any? = { _, _ -> null },
-    crossinline itemContent: @Composable LazyGridItemScope.(helper: IntervalHelper<T>, index: Int, item: T) -> Unit
-) = selectableItemsIndexed(state, map().items, null, span, contentType, itemContent)
-
-/** Array */
 inline fun <T> LazyGridScope.selectableItems(
     state: SelectionState<Any, T>,
     items: Array<T>,
@@ -149,6 +108,9 @@ inline fun <T> LazyGridScope.selectableItems(
 ) {
     val itemProvider = { index: Int -> items[index] }
     val keyProvider = if (key != null) { index: Int -> key(items[index]) } else null
+    (state as? SelectionSupport)?.selectableItemsContent?.updateInterval(
+        this, items.size, itemProvider, keyProvider
+    )
     items(
         count = items.size,
         key = if (key != null) { index: Int -> key(items[index]) } else null,
@@ -162,7 +124,6 @@ inline fun <T> LazyGridScope.selectableItems(
     }
 }
 
-/** ArrayIndexed */
 inline fun <T> LazyGridScope.selectableItemsIndexed(
     state: SelectionState<Any, T>,
     items: Array<T>,
@@ -173,6 +134,9 @@ inline fun <T> LazyGridScope.selectableItemsIndexed(
 ) {
     val itemProvider = { index: Int -> items[index] }
     val keyProvider = if (key != null) { index: Int -> key(index, items[index]) } else null
+    (state as? SelectionSupport)?.selectableItemsContent?.updateInterval(
+        this, items.size, itemProvider, keyProvider
+    )
     items(
         count = items.size,
         key = if (key != null) { index: Int -> key(index, items[index]) } else null,

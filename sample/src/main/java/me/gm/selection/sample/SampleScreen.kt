@@ -68,7 +68,6 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import me.gm.selection.IntervalHelper
-import me.gm.selection.KeyIndexItemMap
 import me.gm.selection.SelectionState
 import me.gm.selection.grid.dragAfterLongPressToSelectGesture
 import me.gm.selection.grid.selectableItems
@@ -76,10 +75,7 @@ import me.gm.selection.grid.tapInActionModeToToggleGesture
 import me.gm.selection.list.dragAfterLongPressToSelectGesture
 import me.gm.selection.list.selectableItems
 import me.gm.selection.list.tapInActionModeToToggleGesture
-import me.gm.selection.plus
-import me.gm.selection.rememberIndexItemMapLambda
 import me.gm.selection.rememberIndexSelectionState
-import me.gm.selection.rememberKeyItemMapLambda
 import me.gm.selection.rememberKeySelectionState
 
 @OptIn(
@@ -129,14 +125,6 @@ fun SampleScreen() {
     ) { contentPadding ->
         var selectedOption by rememberSaveable { mutableStateOf("LazyColumn") }
 
-        val mapA = rememberKeyItemMapLambda(
-            items = itemsA,
-            key = { item -> "A" to item },
-        )
-        val mapB = rememberKeyItemMapLambda(
-            items = itemsB,
-            key = { item -> "B" to item },
-        )
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -149,14 +137,13 @@ fun SampleScreen() {
                         modifier = Modifier
                             .fillMaxSize()
                             .weight(1f)
-                            .dragAfterLongPressToSelectGesture(
-                                listState, selectionState, mapA + mapB
-                            ),
+                            .dragAfterLongPressToSelectGesture(listState, selectionState),
                         state = listState
                     ) {
                         selectableItems(
                             state = selectionState,
-                            map = mapA
+                            items = itemsA,
+                            key = { item -> "A" to item },
                         ) { helper, item ->
                             val context = LocalContext.current
                             SampleListItem(
@@ -173,7 +160,8 @@ fun SampleScreen() {
                         }
                         selectableItems(
                             state = selectionState,
-                            map = mapB
+                            items = itemsB,
+                            key = { item -> "B" to item },
                         ) { helper, item ->
                             val context = LocalContext.current
                             SampleListItem(
@@ -197,29 +185,21 @@ fun SampleScreen() {
                     BackHandler(enabled = indexSelectionState.hasSelection()) {
                         indexSelectionState.clearSelection()
                     }
-                    val indexMapA = rememberIndexItemMapLambda(
-                        state = indexSelectionState,
-                        items = itemsA
-                    )
                     LazyRow(
                         modifier = Modifier
                             .fillMaxSize()
                             .weight(1f)
                             .tapInActionModeToToggleGesture(
-                                listState,
-                                indexSelectionState as SelectionState<Any, Int>,
-                                indexMapA as () -> KeyIndexItemMap<Any, Int>
+                                listState, indexSelectionState as SelectionState<Any, Int>
                             )
                             .dragAfterLongPressToSelectGesture(
-                                listState,
-                                indexSelectionState as SelectionState<Any, Int>,
-                                indexMapA as () -> KeyIndexItemMap<Any, Int>
+                                listState, indexSelectionState as SelectionState<Any, Int>
                             ),
                         state = listState
                     ) {
                         selectableItems(
                             state = indexSelectionState,
-                            map = indexMapA,
+                            items = itemsA,
                         ) { helper, item ->
                             SampleListItem(
                                 modifier = Modifier.animateItemPlacement(),
@@ -237,17 +217,14 @@ fun SampleScreen() {
                         modifier = Modifier
                             .fillMaxSize()
                             .weight(1f)
-                            .tapInActionModeToToggleGesture(
-                                gridState, selectionState, mapA + mapB
-                            )
-                            .dragAfterLongPressToSelectGesture(
-                                gridState, selectionState, mapA + mapB
-                            ),
+                            .tapInActionModeToToggleGesture(gridState, selectionState)
+                            .dragAfterLongPressToSelectGesture(gridState, selectionState),
                         state = gridState
                     ) {
                         selectableItems(
                             state = selectionState,
-                            map = mapA,
+                            items = itemsA,
+                            key = { item -> "A" to item },
                             span = { GridItemSpan(2) },
                         ) { helper, item ->
                             SampleListItem(
@@ -258,7 +235,8 @@ fun SampleScreen() {
                         }
                         selectableItems(
                             state = selectionState,
-                            map = mapB,
+                            items = itemsB,
+                            key = { item -> "B" to item },
                             span = { GridItemSpan(1) },
                         ) { helper, item ->
                             SampleListItem(
@@ -277,17 +255,14 @@ fun SampleScreen() {
                         modifier = Modifier
                             .fillMaxSize()
                             .weight(1f)
-                            .tapInActionModeToToggleGesture(
-                                gridState, selectionState, mapA + mapB
-                            )
-                            .dragAfterLongPressToSelectGesture(
-                                gridState, selectionState, mapA + mapB
-                            ),
+                            .tapInActionModeToToggleGesture(gridState, selectionState)
+                            .dragAfterLongPressToSelectGesture(gridState, selectionState),
                         state = gridState
                     ) {
                         selectableItems(
                             state = selectionState,
-                            map = mapA,
+                            items = itemsA,
+                            key = { item -> "A" to item },
                             span = { GridItemSpan(2) },
                         ) { helper, item ->
                             SampleListItem(
@@ -298,7 +273,8 @@ fun SampleScreen() {
                         }
                         selectableItems(
                             state = selectionState,
-                            map = mapB,
+                            items = itemsB,
+                            key = { item -> "B" to item },
                             span = { GridItemSpan(1) },
                         ) { helper, item ->
                             SampleListItem(
@@ -333,10 +309,12 @@ fun SampleScreen() {
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                TextButton(onClick = {
-                    itemsA.shuffle()
-                    itemsB.shuffle()
-                }) {
+                TextButton(
+                    onClick = {
+                        itemsA.shuffle()
+                        itemsB.shuffle()
+                    }
+                ) {
                     Text(text = "Shuffle")
                 }
                 var showSelectedItemsDialog by rememberSaveable { mutableStateOf(false) }
@@ -359,9 +337,7 @@ fun SampleScreen() {
                         }
                     )
                 }
-                TextButton(onClick = {
-                    showSelectedItemsDialog = true
-                }) {
+                TextButton(onClick = { showSelectedItemsDialog = true }) {
                     Text(text = "Show selected items")
                 }
             }

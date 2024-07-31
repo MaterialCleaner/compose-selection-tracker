@@ -42,7 +42,7 @@ class IntervalHelper<T>(
 
     fun isThisSelected(): Boolean = state.isSelected(key(index))
 
-    fun selectedKeys(): List<Any> = state.selectedKeys()
+    fun selectedKeys(): Set<Any> = state.selectedKeys()
 
     fun clearSelection() = state.clearSelection()
 
@@ -50,7 +50,7 @@ class IntervalHelper<T>(
 
     fun hasSelection(): Boolean = state.hasSelection()
 
-    fun selectedItems(): List<T> = state.selectedItems()
+    fun selectedItems(): Set<T> = state.selectedItems()
 
     fun endSelection(): List<T> = state.endSelection()
 }

@@ -16,6 +16,7 @@
 
 package me.gm.selection
 
+import androidx.annotation.RestrictTo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.autoSaver
@@ -58,19 +59,21 @@ private class DefaultSelectionStateController<K, V> : SelectionStateController<K
  * @param saver is used to save the data of selected items. You can use the built-in
  * [noOpSaver] or [danglingSaver] to keep the implementation simple. Alternatively, you can use
  * [autoSaver] or a custom [Saver] to ensure data is not lost
+ * @param autoDeselectMode automatically deselect removed keys when items change
  * @param initialSelection the initial value for [SelectionSupport.selection]
  * @param mutable control whether the [SelectionState] can be modified
  */
 @Composable
 fun <V> rememberKeySelectionState(
     saver: Saver<Pair<List<Any>, List<V>>, Any> = noOpSaver(),
+    autoDeselectMode: AutoDeselectMode = AutoDeselectMode.Disabled,
     initialSelection: Iterable<Pair<Any, V>> = emptyList(),
-    mutable: SelectionStateController<Any, V> = DefaultSelectionStateController(),
+    mutable: SelectionStateController<Any, V> = DefaultSelectionStateController()
 ): KeySelectionState<V> {
     return rememberSaveable(
-        saver = KeySelectionState.Saver(saver)
+        saver = KeySelectionState.Saver(saver, autoDeselectMode, mutable)
     ) {
-        KeySelectionState(initialSelection, mutable)
+        KeySelectionState(autoDeselectMode, initialSelection, mutable)
     }
 }
 
@@ -90,10 +93,10 @@ fun <V> rememberKeySelectionState(
 fun <V> rememberIndexSelectionState(
     saver: Saver<Pair<List<Int>, List<V>>, Any> = noOpSaver(),
     initialSelection: Iterable<Pair<Int, V>> = emptyList(),
-    mutable: SelectionStateController<Int, V> = DefaultSelectionStateController(),
+    mutable: SelectionStateController<Int, V> = DefaultSelectionStateController()
 ): IndexSelectionState<V> {
     return rememberSaveable(
-        saver = IndexSelectionState.Saver(saver)
+        saver = IndexSelectionState.Saver(saver, mutable)
     ) {
         IndexSelectionState(initialSelection, mutable)
     }
@@ -115,7 +118,7 @@ sealed interface SelectionState<K, V> {
 
     fun isSelected(e: K): Boolean
 
-    fun selectedKeys(): List<K>
+    fun selectedKeys(): Set<K>
 
     fun clearSelection()
 
@@ -123,21 +126,33 @@ sealed interface SelectionState<K, V> {
 
     fun hasSelection(): Boolean = selectedItemCount() > 0
 
-    fun selectedItems(): List<V>
+    fun selectedItems(): Set<V>
 
     fun endSelection(): List<V> =
         try {
-            selectedItems()
+            // After clearSelection(), SnapshotMapValueSet will become empty,
+            // so we create a copy here.
+            selectedItems().toList()
         } finally {
             clearSelection()
         }
+
+    fun selectableItemCount(): Int
+
+    fun selectableContent(): Iterable<Pair<Any, V>>
 }
 
 abstract class SelectionSupport<K, V>(
+    autoDeselectMode: AutoDeselectMode,
     initialSelection: Iterable<Pair<K, V>>,
-    var mutable: SelectionStateController<K, V>,
+    var mutable: SelectionStateController<K, V>
 ) : SelectionState<K, V> {
     private val selection: SnapshotStateMap<K, V> = initialSelection.toMutableStateMap()
+
+    @delegate:RestrictTo(RestrictTo.Scope.LIBRARY)
+    val selectableItemsContent: SelectableItemsIntervalContent<K, V> by lazy {
+        SelectableItemsIntervalContent(this, autoDeselectMode)
+    }
 
     final override fun select(e: K, item: V): Boolean =
         mutable.canSelect(e, item) && selection.put(e, item) == null
@@ -147,7 +162,7 @@ abstract class SelectionSupport<K, V>(
 
     final override fun isSelected(e: K): Boolean = selection.containsKey(e)
 
-    final override fun selectedKeys(): List<K> = selection.keys.toList()
+    final override fun selectedKeys(): Set<K> = selection.keys
 
     final override fun clearSelection() {
         if (mutable.canClearSelection()) {
@@ -157,35 +172,62 @@ abstract class SelectionSupport<K, V>(
 
     final override fun selectedItemCount(): Int = selection.size
 
-    final override fun selectedItems(): List<V> = selection.values.toList()
+    @Suppress("UNCHECKED_CAST")
+    final override fun selectedItems(): Set<V> = selection.values as Set<V>
+
+    final override fun selectableItemCount(): Int = selectableItemsContent.itemCount
+
+    final override fun selectableContent(): Iterable<Pair<Any, V>> =
+        selectableItemsContent.getSelectableContent()
 }
 
 abstract class DanglingKeysSupport<K, V>(
+    autoDeselectMode: AutoDeselectMode,
     initialSelection: Iterable<Pair<K, V>>,
     mutable: SelectionStateController<K, V>,
     internal val danglingKeys: MutableList<K>
-) : SelectionSupport<K, V>(initialSelection, mutable)
+) : SelectionSupport<K, V>(autoDeselectMode, initialSelection, mutable)
 
 class KeySelectionState<V>(
+    autoDeselectMode: AutoDeselectMode = AutoDeselectMode.Disabled,
     initialSelection: Iterable<Pair<Any, V>> = emptyList(),
     mutable: SelectionStateController<Any, V> = DefaultSelectionStateController(),
     danglingKeys: MutableList<Any> = mutableListOf()
-) : DanglingKeysSupport<Any, V>(initialSelection, mutable, danglingKeys) {
+) : DanglingKeysSupport<Any, V>(autoDeselectMode, initialSelection, mutable, danglingKeys) {
 
     companion object {
         /** The default [Saver] for [KeySelectionState]. */
-        fun <V> Saver(saver: Saver<Pair<List<Any>, List<V>>, Any>): Saver<KeySelectionState<V>, *> =
+        fun <V> Saver(
+            saver: Saver<Pair<List<Any>, List<V>>, Any>,
+            autoDeselectMode: AutoDeselectMode,
+            mutable: SelectionStateController<Any, V>
+        ): Saver<KeySelectionState<V>, *> =
             Saver(
-                save = { with(saver) { save(it.selectedKeys() to it.selectedItems())!! } },
+                save = {
+                    with(saver) {
+                        save(it.selectedKeys().toList() to it.selectedItems().toList())!!
+                    }
+                },
                 restore = {
                     val (selectedKeys, selectedItems) = saver.restore(it)!!
                     if (saver === DanglingSaver) {
-                        KeySelectionState(danglingKeys = selectedKeys.toMutableList())
+                        KeySelectionState(
+                            autoDeselectMode = autoDeselectMode,
+                            mutable = mutable,
+                            danglingKeys = selectedKeys.toMutableList()
+                        )
                     } else if (selectedKeys.size != selectedItems.size) {
                         // Data cleared or corrupted, drop it.
-                        KeySelectionState()
+                        KeySelectionState(
+                            autoDeselectMode = autoDeselectMode,
+                            mutable = mutable
+                        )
                     } else {
-                        KeySelectionState(initialSelection = selectedKeys.zip(selectedItems))
+                        KeySelectionState(
+                            initialSelection = selectedKeys.zip(selectedItems),
+                            autoDeselectMode = autoDeselectMode,
+                            mutable = mutable
+                        )
                     }
                 }
             )
@@ -194,21 +236,33 @@ class KeySelectionState<V>(
 
 class IndexSelectionState<V>(
     initialSelection: Iterable<Pair<Int, V>> = emptyList(),
-    mutable: SelectionStateController<Int, V> = DefaultSelectionStateController(),
-) : SelectionSupport<Int, V>(initialSelection, mutable) {
+    mutable: SelectionStateController<Int, V> = DefaultSelectionStateController()
+) : SelectionSupport<Int, V>(AutoDeselectMode.Disabled, initialSelection, mutable) {
 
     companion object {
         /** The default [Saver] for [IndexSelectionState]. */
-        fun <V> Saver(saver: Saver<Pair<List<Int>, List<V>>, Any>): Saver<IndexSelectionState<V>, *> =
+        fun <V> Saver(
+            saver: Saver<Pair<List<Int>, List<V>>, Any>,
+            mutable: SelectionStateController<Int, V>
+        ): Saver<IndexSelectionState<V>, *> =
             Saver(
-                save = { with(saver) { save(it.selectedKeys() to it.selectedItems())!! } },
+                save = {
+                    with(saver) {
+                        save(it.selectedKeys().toList() to it.selectedItems().toList())!!
+                    }
+                },
                 restore = {
                     val (selectedKeys, selectedItems) = saver.restore(it)!!
                     if (selectedKeys.size != selectedItems.size) {
                         // Data cleared or corrupted, drop it.
-                        IndexSelectionState()
+                        IndexSelectionState(
+                            mutable = mutable
+                        )
                     } else {
-                        IndexSelectionState(initialSelection = selectedKeys.zip(selectedItems))
+                        IndexSelectionState(
+                            initialSelection = selectedKeys.zip(selectedItems),
+                            mutable = mutable
+                        )
                     }
                 }
             )

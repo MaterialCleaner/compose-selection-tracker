@@ -34,30 +34,33 @@ import androidx.compose.ui.input.pointer.pointerInput
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import me.gm.selection.DetailsLookup
-import me.gm.selection.IndexItemMap
 import me.gm.selection.IndexSelectionState
-import me.gm.selection.KeyIndexItemMap
-import me.gm.selection.KeyItemMap
 import me.gm.selection.KeySelectionState
 import me.gm.selection.RangeHelper
 import me.gm.selection.SelectionState
+import me.gm.selection.SelectionSupport
 import me.gm.selection.detectDragGesturesAfterLongPress
 import me.gm.selection.detectTapGestures
 
 abstract class LazyListDetailsLookup<V> : DetailsLookup<LazyListItemInfo, V>
 
+private fun <K> SelectionState<K, *>.key(touchedItem: LazyListItemInfo): K =
+    when (this) {
+        is KeySelectionState -> touchedItem.key
+        is IndexSelectionState -> touchedItem.index
+        else -> throw IllegalArgumentException()
+    } as K
+
 private class FullyInteractiveLazyListDetailsLookup<V>(
-    private val enabled: () -> Boolean,
-    private val map: () -> KeyIndexItemMap<Any, V>,
-    private val key: (itemInfo: LazyListItemInfo) -> Any = when (map()) {
-        is KeyItemMap -> { itemInfo -> itemInfo.key }
-        is IndexItemMap -> { itemInfo -> itemInfo.index }
-    }
+    private val selectionState: SelectionState<Any, V>,
+    private val enabled: (LazyListItemInfo) -> Boolean,
 ) : LazyListDetailsLookup<V>() {
 
     override fun getItem(itemInfo: LazyListItemInfo): V? =
-        if (enabled()) {
-            map().getItem(key(itemInfo))
+        if (enabled(itemInfo)) {
+            (selectionState as? SelectionSupport)?.selectableItemsContent?.getItemForKey(
+                selectionState.key(itemInfo)
+            )
         } else {
             null
         }
@@ -97,13 +100,6 @@ private fun <V> itemDetails(
     return null
 }
 
-private fun <K> SelectionState<K, *>.key(touchedItem: LazyListItemInfo): K =
-    when (this) {
-        is KeySelectionState -> touchedItem.key
-        is IndexSelectionState -> touchedItem.index
-        else -> throw IllegalArgumentException()
-    } as K
-
 fun <V> Modifier.longPressToToggleGesture(
     listState: LazyListState,
     selectionState: SelectionState<Any, V>,
@@ -124,12 +120,11 @@ fun <V> Modifier.longPressToToggleGesture(
 fun <V> Modifier.longPressToToggleGesture(
     listState: LazyListState,
     selectionState: SelectionState<Any, V>,
-    map: () -> KeyIndexItemMap<Any, V>,
-    enabled: () -> Boolean = { true },
+    enabled: (LazyListItemInfo) -> Boolean = { true },
 ): Modifier = longPressToToggleGesture(
     listState,
     selectionState,
-    FullyInteractiveLazyListDetailsLookup(enabled, map)
+    FullyInteractiveLazyListDetailsLookup(selectionState, enabled)
 )
 
 fun <V> Modifier.tapInActionModeToToggleGesture(
@@ -156,12 +151,11 @@ fun <V> Modifier.tapInActionModeToToggleGesture(
 fun <V> Modifier.tapInActionModeToToggleGesture(
     listState: LazyListState,
     selectionState: SelectionState<Any, V>,
-    map: () -> KeyIndexItemMap<Any, V>,
-    enabled: () -> Boolean = { true },
+    enabled: (LazyListItemInfo) -> Boolean = { true },
 ): Modifier = tapInActionModeToToggleGesture(
     listState,
     selectionState,
-    FullyInteractiveLazyListDetailsLookup(enabled, map)
+    FullyInteractiveLazyListDetailsLookup(selectionState, enabled)
 )
 
 private class RangeSupport<V>(
@@ -265,10 +259,9 @@ fun <V> Modifier.dragAfterLongPressToSelectGesture(
 fun <V> Modifier.dragAfterLongPressToSelectGesture(
     listState: LazyListState,
     selectionState: SelectionState<Any, V>,
-    map: () -> KeyIndexItemMap<Any, V>,
-    enabled: () -> Boolean = { true },
+    enabled: (LazyListItemInfo) -> Boolean = { true },
 ): Modifier = dragAfterLongPressToSelectGesture(
     listState,
     selectionState,
-    FullyInteractiveLazyListDetailsLookup(enabled, map)
+    FullyInteractiveLazyListDetailsLookup(selectionState, enabled)
 )

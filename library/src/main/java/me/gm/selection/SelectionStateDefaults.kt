@@ -39,6 +39,10 @@ private val NoOpSaver: Saver<Pair<List<Any>, List<Any>>, Any> = Saver(
     restore = { emptyList<Any>() to emptyList() }
 )
 
+/**
+ * Save the key and automatically restore the selection after
+ * [SelectableItemsIntervalContent.updateInterval].
+ */
 fun <T> danglingSaver(): Saver<T, Any> =
     @Suppress("UNCHECKED_CAST")
     (DanglingSaver as Saver<T, Any>)
@@ -51,3 +55,16 @@ internal val DanglingSaver: Saver<Pair<List<Any>, List<Any>>, List<Any>> = Saver
         keys to emptyList()
     }
 )
+
+sealed class AutoDeselectMode {
+    data object Disabled : AutoDeselectMode()
+    data object SingleInterval : AutoDeselectMode()
+
+    /**
+     * I haven't figured out a way to determine that [SelectableItemsIntervalContent.updateInterval]
+     * has added all selectable items in lazyDslScope.
+     * I suspect it might be impossible, so you need to manually specify [latestKeys].
+     * If you come up with a method, please let me know. Thank you!
+     */
+    data class Enabled(val latestKeys: () -> Set<*>) : AutoDeselectMode()
+}
