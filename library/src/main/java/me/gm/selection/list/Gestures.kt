@@ -184,22 +184,20 @@ private class RangeSupport<V>(
         val newRange = range()
 
         val removed = oldRange - newRange
-        if (removed.isNotEmpty()) {
-            removed.forEach { index ->
-                val itemInfo = lookupItemInfoForIndex(index) ?: return@forEach
-                if (!initialSelection.contains(selectionState.key(itemInfo))) {
-                    selectionState.deselect(selectionState.key(itemInfo))
-                }
+        removed.forEach { index ->
+            val itemInfo = lookupItemInfoForIndex(index) ?: return@forEach
+            if (!initialSelection.contains(selectionState.key(itemInfo))) {
+                selectionState.deselect(selectionState.key(itemInfo))
             }
-        } else {
-            val added = newRange - oldRange
-            added.forEach { index ->
-                val itemInfo =
-                    if (index == extendToItem.index) extendToItem
-                    else lookupItemInfoForIndex(index) ?: return@forEach
-                val item = detailsLookup.getItem(itemInfo) ?: return@forEach
-                selectionState.select(selectionState.key(itemInfo), item)
-            }
+        }
+
+        val added = newRange - oldRange
+        added.forEach { index ->
+            val itemInfo =
+                if (index == extendToItem.index) extendToItem
+                else lookupItemInfoForIndex(index) ?: return@forEach
+            val item = detailsLookup.getItem(itemInfo) ?: return@forEach
+            selectionState.select(selectionState.key(itemInfo), item)
         }
     }
 }
@@ -226,7 +224,7 @@ fun <V> Modifier.dragAfterLongPressToSelectGesture(
                             listState, detailsLookup, selectionState, touchedItem.index, offset
                         )
                     }
-                    return@onDragStart true
+                    return@onDragStart selected
                 },
                 onDragEnd = {
                     rangeSupport?.scroller?.stopScroll()

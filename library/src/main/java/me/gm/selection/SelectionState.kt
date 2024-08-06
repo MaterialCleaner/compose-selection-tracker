@@ -224,8 +224,8 @@ class KeySelectionState<V>(
                         )
                     } else {
                         KeySelectionState(
-                            initialSelection = selectedKeys.zip(selectedItems),
                             autoDeselectMode = autoDeselectMode,
+                            initialSelection = selectedKeys.zip(selectedItems),
                             mutable = mutable
                         )
                     }
