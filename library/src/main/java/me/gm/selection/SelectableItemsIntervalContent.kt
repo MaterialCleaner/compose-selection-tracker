@@ -28,11 +28,13 @@ class SelectableItemsIntervalContent<K, V>(
     private val autoDeselectMode: AutoDeselectMode
 ) {
     private var lazyDslScope: Any? = null
+    private var itemRef: Any? = null
     private var intervals: MutableIntervalList<SelectableItemsInterval<V>> = MutableIntervalList()
     private val map: MutableScatterMap<Any, V> = MutableScatterMap()
 
     fun updateInterval(
         lazyDslScope: Any?,
+        itemRef: Any?,
         count: Int,
         item: (Int) -> V,
         key: ((index: Int) -> Any)?
@@ -61,15 +63,18 @@ class SelectableItemsIntervalContent<K, V>(
                 when (autoDeselectMode) {
                     is AutoDeselectMode.Disabled -> {}
 
-                    is AutoDeselectMode.SingleInterval -> if (key != null) {
-                        deselectForNewKeys(
-                            buildSet {
-                                for (i in 0 until count) {
-                                    val keyForIndex = key(i)
-                                    add(keyForIndex as K)
+                    is AutoDeselectMode.SingleInterval -> {
+                        if (key != null && this.itemRef !== itemRef) {
+                            this.itemRef = itemRef
+                            deselectForNewKeys(
+                                buildSet {
+                                    for (i in 0 until count) {
+                                        val keyForIndex = key(i)
+                                        add(keyForIndex as K)
+                                    }
                                 }
-                            }
-                        )
+                            )
+                        }
                     }
 
                     is AutoDeselectMode.Enabled -> {

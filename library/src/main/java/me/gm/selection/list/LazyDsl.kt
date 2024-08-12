@@ -32,7 +32,7 @@ inline fun <T> LazyListScope.selectableItem(
     val itemProvider = { index: Int -> item }
     val keyProvider = if (key != null) { index: Int -> key } else null
     (state as? SelectionSupport)?.selectableItemsContent?.updateInterval(
-        this, 1, itemProvider, keyProvider
+        this, item, 1, itemProvider, keyProvider
     )
     item(
         key = key,
@@ -55,7 +55,7 @@ inline fun <T> LazyListScope.selectableItems(
     val itemProvider = { index: Int -> items[index] }
     val keyProvider = if (key != null) { index: Int -> key(items[index]) } else null
     (state as? SelectionSupport)?.selectableItemsContent?.updateInterval(
-        this, items.size, itemProvider, keyProvider
+        this, items, items.size, itemProvider, keyProvider
     )
     items(
         count = items.size,
@@ -79,7 +79,7 @@ inline fun <T> LazyListScope.selectableItemsIndexed(
     val itemProvider = { index: Int -> items[index] }
     val keyProvider = if (key != null) { index: Int -> key(index, items[index]) } else null
     (state as? SelectionSupport)?.selectableItemsContent?.updateInterval(
-        this, items.size, itemProvider, keyProvider
+        this, items, items.size, itemProvider, keyProvider
     )
     items(
         count = items.size,
@@ -103,7 +103,7 @@ inline fun <T> LazyListScope.selectableItems(
     val itemProvider = { index: Int -> items[index] }
     val keyProvider = if (key != null) { index: Int -> key(items[index]) } else null
     (state as? SelectionSupport)?.selectableItemsContent?.updateInterval(
-        this, items.size, itemProvider, keyProvider
+        this, items, items.size, itemProvider, keyProvider
     )
     items(
         count = items.size,
@@ -127,7 +127,7 @@ inline fun <T> LazyListScope.selectableItemsIndexed(
     val itemProvider = { index: Int -> items[index] }
     val keyProvider = if (key != null) { index: Int -> key(index, items[index]) } else null
     (state as? SelectionSupport)?.selectableItemsContent?.updateInterval(
-        this, items.size, itemProvider, keyProvider
+        this, items, items.size, itemProvider, keyProvider
     )
     items(
         count = items.size,
