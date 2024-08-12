@@ -28,7 +28,7 @@ class SelectableItemsIntervalContent<K, V>(
     private val autoDeselectMode: AutoDeselectMode
 ) {
     private var lazyDslScope: Any? = null
-    private lateinit var intervals: MutableIntervalList<SelectableItemsInterval<V>>
+    private var intervals: MutableIntervalList<SelectableItemsInterval<V>> = MutableIntervalList()
     private val map: MutableScatterMap<Any, V> = MutableScatterMap()
 
     fun updateInterval(
@@ -53,7 +53,9 @@ class SelectableItemsIntervalContent<K, V>(
         val isScopeChanged = this.lazyDslScope !== lazyDslScope
         if (isScopeChanged) {
             this.lazyDslScope = lazyDslScope
-            intervals = MutableIntervalList()
+            if (intervals.size != 0) {
+                intervals = MutableIntervalList()
+            }
             map.clear()
             if (selectionSupport.hasSelection() && selectionSupport is KeySelectionState) {
                 when (autoDeselectMode) {
