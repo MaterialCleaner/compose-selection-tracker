@@ -19,11 +19,16 @@ package me.gm.selection.list
 import android.annotation.SuppressLint
 import androidx.annotation.FloatRange
 import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Indication
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -120,6 +125,21 @@ class SelectableLazyItemScopeImpl(
         fillParentMaxHeight(fraction)
     }
 
+    override fun Modifier.animateItem(
+        fadeInSpec: FiniteAnimationSpec<Float>?,
+        placementSpec: FiniteAnimationSpec<IntOffset>?,
+        fadeOutSpec: FiniteAnimationSpec<Float>?,
+    ): Modifier = with(delegate) {
+        animateItem(fadeInSpec, placementSpec, fadeOutSpec)
+    }
+
+    @Deprecated(
+        "Use Modifier.animateItem() instead",
+        ReplaceWith(
+            "Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null, " +
+                    "placementSpec = animationSpec)"
+        )
+    )
     @ExperimentalFoundationApi
     override fun Modifier.animateItemPlacement(
         animationSpec: FiniteAnimationSpec<IntOffset>
