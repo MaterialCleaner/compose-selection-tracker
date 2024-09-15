@@ -1,33 +1,33 @@
 plugins {
     id("com.android.library")
-    kotlin("android")
-    id("org.jetbrains.kotlin.plugin.compose") version "2.0.0"
     id("com.vanniktech.maven.publish")
+    id("org.jetbrains.kotlin.plugin.compose")
+    kotlin("android")
 }
 
 android {
-    namespace = "me.gm.selection"
-    buildToolsVersion = "34.0.0"
-    compileSdk = 34
-    defaultConfig {
-        minSdk = 21
-        consumerProguardFiles("proguard-rules.pro")
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-    }
-    kotlinOptions { jvmTarget = JavaVersion.VERSION_1_8.toString() }
     buildFeatures { compose = true }
+    buildToolsVersion = "34.0.0"
     buildTypes {
         release {
             isMinifyEnabled = false
         }
     }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+    compileSdk = 34
+    defaultConfig {
+        consumerProguardFiles("proguard-rules.pro")
+        minSdk = 21
+    }
+    kotlinOptions { jvmTarget = JavaVersion.VERSION_1_8.toString() }
+    namespace = "me.gm.selection"
 }
 
 dependencies {
-    implementation(platform("androidx.compose:compose-bom:2024.09.00"))
+    implementation(platform("androidx.compose:compose-bom:2024.09.01"))
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.5")

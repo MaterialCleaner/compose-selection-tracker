@@ -1,12 +1,26 @@
 plugins {
     id("com.android.application")
+    id("org.jetbrains.kotlin.plugin.compose")
     kotlin("android")
-    id("org.jetbrains.kotlin.plugin.compose") version "2.0.0"
 }
 
 android {
-    namespace = "me.gm.selection.sample"
+    buildFeatures { compose = true }
     buildToolsVersion = "34.0.0"
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+            )
+            signingConfig = signingConfigs.getByName("release")
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
     compileSdk = 34
     defaultConfig {
         applicationId = "me.gm.selection.sample"
@@ -15,12 +29,8 @@ android {
         versionCode = (extra["VERSION_CODE"] as String).toInt()
         versionName = extra["VERSION_NAME"] as String
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-    }
     kotlinOptions { jvmTarget = JavaVersion.VERSION_1_8.toString() }
-    buildFeatures { compose = true }
+    namespace = "me.gm.selection.sample"
     signingConfigs {
         create("release") {
             storeFile = File(System.getenv("STORE_FILE") ?: "/dev/null")
@@ -29,24 +39,13 @@ android {
             keyPassword = System.getenv("KEY_PASSWORD")
         }
     }
-    buildTypes {
-        release {
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-            signingConfig = signingConfigs.getByName("release")
-        }
-    }
 }
 
 dependencies {
     implementation(project(":library"))
 
     implementation("androidx.activity:activity-compose:1.9.2")
-    implementation(platform("androidx.compose:compose-bom:2024.09.00"))
+    implementation(platform("androidx.compose:compose-bom:2024.09.01"))
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.animation:animation")
     implementation("androidx.compose.material:material-icons-core")
