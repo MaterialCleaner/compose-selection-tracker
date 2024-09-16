@@ -7,6 +7,14 @@ plugins {
 android {
     buildFeatures { compose = true }
     buildToolsVersion = "34.0.0"
+    signingConfigs {
+        create("release") {
+            storeFile = File(System.getenv("STORE_FILE") ?: "/dev/null")
+            storePassword = System.getenv("STORE_PASSWORD")
+            keyAlias = System.getenv("KEY_ALIAS")
+            keyPassword = System.getenv("KEY_PASSWORD")
+        }
+    }
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -31,14 +39,6 @@ android {
     }
     kotlinOptions { jvmTarget = JavaVersion.VERSION_1_8.toString() }
     namespace = "me.gm.selection.sample"
-    signingConfigs {
-        create("release") {
-            storeFile = File(System.getenv("STORE_FILE") ?: "/dev/null")
-            storePassword = System.getenv("STORE_PASSWORD")
-            keyAlias = System.getenv("KEY_ALIAS")
-            keyPassword = System.getenv("KEY_PASSWORD")
-        }
-    }
 }
 
 dependencies {
